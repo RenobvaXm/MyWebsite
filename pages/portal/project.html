@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Project | RENOBVA Portal</title><link rel="stylesheet" href="../../assets/css/style.css"></head><body class="portal-body"><div class="portal-shell"><aside class="portal-side"><a class="portal-logo" href="../../index.html"><img src="../../assets/images/brand/logo-icon.svg"> RENOBVA</a><nav class="side-nav"><a class="" href="dashboard.html">⌂ Dashboard</a><a class="" href="new-project.html">＋ New Project</a><a class="" href="settings.html">⚙ Settings</a><a data-admin-link href="../admin/dashboard.html" hidden>◆ Admin Dashboard</a></nav><div class="side-bottom"><button onclick="logout()">↪ Sign out</button></div></aside><main class="portal-main"><div class="portal-top"><a href="../../index.html">← Website</a><div class="user-chip"><span class="avatar">R</span><span data-user-name>Client</span></div></div><section class="portal-title"><span class="eyebrow" id="projectService">PROJECT</span><h1 id="projectTitle">Loading project...</h1><p>Status: <span class="status" id="projectStatus">loading</span></p><div class="client-ticket-controls" id="clientTicketControls" hidden><button class="close-own-ticket-btn" id="clientCloseTicket">× Close my ticket</button><small>You can close this request, but only RENOBVA can change its project progress.</small></div></section><div class="chat-layout"><div class="chat-head"><div><h2>Project chat</h2><small style="color:#777">You ↔ RENOBVA</small></div><span class="dot"></span></div><div class="messages" id="messages"></div><form class="chat-compose rich-compose" id="chatForm">
+      <div class="chat-dropzone" id="chatDropzone" hidden>
+        <div class="drop-icon">⇧</div><strong>Drop to upload</strong>
+        <span>Photos, documents or folders</span>
+      </div>
+      <div class="upload-menu" id="uploadMenu" hidden>
+        <button type="button" class="upload-option" data-picker="image"><span class="upload-option-icon">▧</span><span><b>Photo</b><small>JPG, PNG, WEBP, GIF</small></span></button>
+        <button type="button" class="upload-option" data-picker="file"><span class="upload-option-icon">⌑</span><span><b>File</b><small>PDF, DOCX, TXT, ZIP & more</small></span></button>
+        <button type="button" class="upload-option" data-picker="folder"><span class="upload-option-icon">▱</span><span><b>Folder</b><small>Upload a complete folder</small></span></button>
+      </div>
+      <input id="chatImage" type="file" accept="image/*" multiple hidden>
+      <input id="chatDocument" type="file" accept=".pdf,.doc,.docx,.txt,.rtf,.csv,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.7z,.json,.md" multiple hidden>
+      <input id="chatFolder" type="file" webkitdirectory directory multiple hidden>
+      <div class="upload-queue" id="uploadQueue" hidden></div>
+      <div class="compose-row">
+        <button class="attach-btn" id="attachMenuButton" type="button" aria-label="Add attachment" title="Add attachment">＋</button>
+        <input name="message" autocomplete="off" placeholder="Write a message...">
+        <button class="btn primary" type="submit">Send</button>
+      </div>
+    </form></div></main></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../../assets/js/supabase-config.js"></script><script src="../../assets/js/modules/portal-core.js"></script><script src="../../assets/js/modules/chat.js"></script></body></html>

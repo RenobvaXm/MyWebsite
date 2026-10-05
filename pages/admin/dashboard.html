@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Dashboard | RENOBVA Admin</title>
+    <link rel="stylesheet" href="../../assets/css/style.css" />
+  </head>
+  <body class="portal-body">
+    <div class="portal-shell">
+      <aside class="portal-side">
+        <a class="portal-logo" href="../../index.html"
+          ><img src="../../assets/images/brand/logo-icon.svg" /> RENOBVA
+          <small style="color: #ff7955">ADMIN</small></a
+        >
+        <nav class="side-nav">
+          <a class="active" href="dashboard.html">⌂ Dashboard</a
+          ><a href="../portal/dashboard.html">Client view</a
+          ><a href="../portal/new-project.html">＋ New Project</a>
+        </nav>
+        <div class="side-bottom">
+          <button onclick="logout()">↪ Sign out</button>
+        </div>
+      </aside>
+      <main class="portal-main">
+        <div class="portal-top">
+          <a href="../../index.html">← Website</a>
+          <div class="user-chip">
+            <span class="avatar">A</span><span data-user-name>Admin</span>
+          </div>
+        </div>
+        <section class="portal-title">
+          <span class="eyebrow">ADMIN CONTROL</span>
+          <h1>RENOBVA Dashboard.</h1>
+          <p>
+            Manage clients, projects, statuses and conversations from one
+            workspace.
+          </p>
+        </section>
+        <div class="admin-stats">
+          <div class="portal-card">
+            <small>Total projects</small><strong id="countProjects">—</strong>
+          </div>
+          <div class="portal-card">
+            <small>Registered clients</small
+            ><strong id="countClients">—</strong>
+          </div>
+          <div class="portal-card">
+            <small>Active projects</small><strong id="countActive">—</strong>
+          </div>
+        </div>
+        <div class="admin-toolbar">
+          <input
+            id="adminSearch"
+            placeholder="Search project, client or email..."
+          /><select id="adminFilter">
+            <option value="all">All statuses</option>
+            <option>new</option>
+            <option>questions</option>
+            <option>in progress</option>
+            <option>review</option>
+            <option>completed</option>
+            <option>cancelled</option>
+          </select>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Project / Client</th>
+                <th>Service / Budget</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminProjects"></tbody>
+          </table>
+        </div>
+        <section class="admin-help">
+          <div>
+            <span class="eyebrow">WORKFLOW</span>
+            <h2>Client communication</h2>
+            <p>
+              Open Chat on any project to talk directly with that client.
+              Messages are tied to the project and protected by Supabase RLS.
+            </p>
+          </div>
+          <a class="btn" href="../portal/dashboard.html"
+            >View client portal →</a
+          >
+        </section>
+      </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../../assets/js/supabase-config.js"></script>
+    <script src="../../assets/js/modules/portal-core.js"></script>
+    <script src="../../assets/js/modules/admin.js"></script>
+  </body>
+</html>

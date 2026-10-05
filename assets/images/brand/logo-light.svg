@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1800" height="500" viewBox="0 0 1800 500"><defs><linearGradient id="g"><stop stop-color="#D90018"/><stop offset=".5" stop-color="#FF2F16"/><stop offset="1" stop-color="#FFB21A"/></linearGradient><radialGradient id="ambient"><stop stop-color="#D90018" stop-opacity=".32"/><stop offset="1" stop-color="#D90018" stop-opacity="0"/></radialGradient></defs><rect width="1800" height="500" fill="#F5F3F0"/><svg x="80" y="70" width="360" height="360" viewBox="0 0 1000 1000"><defs>
+    <linearGradient id="fire" x1="0%" y1="20%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#d90018"/>
+      <stop offset="45%" stop-color="#ff2f16"/>
+      <stop offset="78%" stop-color="#ff7417"/>
+      <stop offset="100%" stop-color="#ffb21a"/>
+    </linearGradient>
+
+    <linearGradient id="fireReverse" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffb21a"/>
+      <stop offset="42%" stop-color="#ff5217"/>
+      <stop offset="100%" stop-color="#c90019"/>
+    </linearGradient>
+
+    <linearGradient id="darkFire" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7b0010"/>
+      <stop offset="50%" stop-color="#c20a13"/>
+      <stop offset="100%" stop-color="#ff3c16"/>
+    </linearGradient>
+
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Upper ribbon / bowl -->
+  <path
+    d="M145 175
+       H685
+       C800 175 885 260 885 375
+       C885 490 800 575 685 575
+       H605
+       L515 455
+       H675
+       C724 455 765 416 765 367
+       C765 318 724 285 675 285
+       H245
+       Z"
+    fill="url(#fire)"
+  />
+
+  <!-- Inner depth -->
+  <path
+    d="M245 285 H675
+       C724 285 765 318 765 367
+       C765 416 724 455 675 455
+       H515
+       L575 535
+       H690
+       C782 535 845 469 845 375
+       C845 281 778 215 685 215
+       H185 Z"
+    fill="url(#darkFire)"
+    opacity=".48"
+  />
+
+  <!-- Main diagonal leg -->
+  <path
+    d="M330 405
+       H495
+       L855 825
+       H680
+       Z"
+    fill="url(#fireReverse)"
+  />
+
+  <!-- Highlight on diagonal -->
+  <path
+    d="M359 425
+       H478
+       L801 801
+       H746
+       Z"
+    fill="#ffb01b"
+    opacity=".22"
+  />
+
+  <!-- Left arrow / development accent -->
+  <path
+    d="M150 410
+       L330 595
+       L150 780
+       Z"
+    fill="url(#fire)"
+  />
+
+  <!-- Facet -->
+  <path
+    d="M150 410
+       L252 595
+       L150 780
+       Z"
+    fill="#ff9a18"
+    opacity=".62"
+  />
+
+  <path
+    d="M252 595 L330 595 L150 780 Z"
+    fill="#a90017"
+    opacity=".65"
+  />
+
+  <!-- Fine warm edge -->
+  <path
+    d="M145 175 H685
+       C800 175 885 260 885 375"
+    fill="none"
+    stroke="#ffb21a"
+    stroke-width="8"
+    stroke-linecap="round"
+    opacity=".8"
+  />
+
+  <path
+    d="M330 405 H495 L855 825"
+    fill="none"
+    stroke="#ff9d19"
+    stroke-width="7"
+    stroke-linecap="round"
+    opacity=".7"
+  />
+</svg><text x="460" y="292" fill="#0B0B0D" font-family="Arial, sans-serif" font-size="165" font-weight="800" letter-spacing="8">RENOBVA</text><text x="465" y="354" fill="#FF7417" font-family="Arial, sans-serif" font-size="31" font-weight="700" letter-spacing="3">DESIGN  ·  DEVELOPMENT  ·  DIGITAL EXPERIENCES</text></svg>

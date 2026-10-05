@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Contact | RENOBVA</title>
+    <link rel="icon" href="../assets/images/brand/renobva.ico" />
+    <link rel="stylesheet" href="../assets/css/style.css" />
+  </head>
+  <body>
+    <header class="navbar">
+      <div class="container navin">
+        <a
+          class="logo brand-logo"
+          href="../index.html"
+          aria-label="RENOBVA Home"
+        >
+          <span class="brand-icon-wrap"
+            ><img src="../assets/images/brand/logo-icon.svg" alt=""
+          /></span>
+          <span class="brand-word">RENOBVA</span>
+        </a>
+        <nav class="navlinks">
+          <a href="../index.html">Home</a><a href="work.html">Work</a
+          ><a href="services.html">Services</a><a href="special.html">Special</a
+          ><a href="pricing.html">Pricing</a><a href="about.html">About</a
+          ><a class="active" href="contact.html">Contact</a
+          ><a
+            href="auth/login.html"
+            data-client-portal
+            data-dashboard-href="portal/dashboard.html"
+            >Client Portal</a
+          ><a class="nav-cta" href="contact.html">Start a project</a>
+        </nav>
+        <button class="menu" aria-label="Open navigation">☰</button>
+      </div>
+    </header>
+    <main>
+      <section class="pagehero">
+        <div class="container">
+          <span class="eyebrow">Start a project</span>
+          <h1>Tell me what you're <span class="gradient">building.</span></h1>
+          <p class="lead">
+            Business website, redesign, full-stack project or a personal
+            surprise — start with the idea.
+          </p>
+        </div>
+      </section>
+      <section>
+        <div class="container contactgrid">
+          <div>
+            <span class="eyebrow">Project enquiry</span>
+            <h2 style="font: 700 45px Manrope">
+              A few details are enough to start.
+            </h2>
+            <p class="lead">
+              Tell RENOBVA what you need. Your request is securely saved and can be managed from the admin dashboard.
+            </p>
+          </div>
+          <form class="contactform" id="contactForm">
+            <div class="notice" id="contactNotice" hidden></div>
+            <input name="name" required placeholder="Your name" /><input
+              type="email"
+              name="email"
+              required
+              placeholder="Email address"
+            /><select name="service">
+              <option>Business Website</option>
+              <option>Full-Stack Project</option>
+              <option>Website Redesign</option>
+              <option>Birthday Website</option>
+              <option>Anniversary / Love</option>
+              <option>Mother's Day</option>
+              <option>Wedding / Proposal</option>
+              <option>Custom Celebration</option></select
+            ><select name="budget">
+              <option>Budget / package</option>
+              <option>€49–€99</option>
+              <option>€100–€200</option>
+              <option>€200–€400</option>
+              <option>€500–€1,200</option>
+              <option>€1,200+</option></select
+            ><textarea name="message" required placeholder="Tell me about the project..."></textarea>
+            ><button class="btn primary">Send project request →</button>
+          </form>
+        </div>
+      </section>
+    </main>
+    <footer class="footer">
+      <div class="container">
+        <div class="footgrid">
+          <div>
+            <a class="logo brand-logo footer-brand" href="../index.html">
+              <span class="brand-icon-wrap"
+                ><img src="../assets/images/brand/logo-icon.svg" alt=""
+              /></span>
+              <span class="brand-word">RENOBVA</span></a
+            >
+            <p>
+              Professional websites for businesses.<br />Personal websites for
+              moments that matter.
+            </p>
+          </div>
+          <div>
+            <h4>Explore</h4>
+            <a href="work.html">Work</a><br /><a href="services.html"
+              >Services</a
+            ><br /><a href="special.html">RENOBVA Special</a>
+          </div>
+          <div>
+            <h4>Business</h4>
+            <a href="pricing.html">Pricing</a><br /><a href="about.html"
+              >About</a
+            ><br /><a href="contact.html">Contact</a>
+          </div>
+        </div>
+        <div class="bottom">
+          <span>© <span data-year></span> RENOBVA</span
+          ><span>Designed & developed by RENOBVA.</span>
+        </div>
+      </div>
+    </footer>
+    <script src="../assets/js/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../assets/js/supabase-config.js"></script>
+    <script src="../assets/js/modules/site-auth.js"></script>
+  <script src="../assets/js/modules/contact.js"></script>
+  </body>
+</html>

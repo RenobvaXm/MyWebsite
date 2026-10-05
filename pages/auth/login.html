@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Login | RENOBVA</title>
+    <link rel="stylesheet" href="../../assets/css/style.css" />
+  </head>
+  <body class="portal-body">
+    <main class="auth-layout">
+      <section class="auth-art">
+        <a class="portal-logo" href="../../index.html"
+          ><img src="../../assets/images/brand/logo-icon.svg" /> RENOBVA</a
+        >
+        <div>
+          <span class="eyebrow">CLIENT PORTAL</span>
+          <h1>
+            Build something<br /><span class="gradient"
+              >worth remembering.</span
+            >
+          </h1>
+        </div>
+        <small>Secure project workspace • RENOBVA</small>
+      </section>
+      <section class="auth-box">
+        <div class="auth-card">
+          <span class="eyebrow">WELCOME BACK</span>
+          <h2>Sign in.</h2>
+          <p>Access your projects, messages and requests.</p>
+          <form class="form-stack" data-auth="login">
+            <label>Email<input name="email" type="email" required /></label
+            ><label
+              >Password<input name="password" type="password" required /></label
+            ><button class="btn primary">Sign in →</button>
+          </form>
+          <div class="auth-links">
+            <a href="forgot-password.html">Forgot password?</a
+            ><span>New here? <a href="register.html">Create account</a></span>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../../assets/js/supabase-config.js"></script>
+    <script src="../../assets/js/modules/portal-core.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+  </body>
+</html>
