@@ -14,7 +14,12 @@ type.addEventListener("change",draw);draw();
 document.querySelector("#orderForm").addEventListener("submit",async e=>{
  e.preventDefault();const ctx=await requireAuth();if(!ctx)return;
  const fd=new FormData(e.target),answers={};[...(questions[type.value]||[])].forEach((q,i)=>answers[q]=fd.get("q"+i));
- const category=["Birthday Website","Anniversary / Love","Mother's Day","Wedding / Proposal","Custom Celebration"].includes(type.value)?"special":"business";
- const {data,error}=await renobva.sb.from("projects").insert({user_id:ctx.user.id,title:fd.get("title"),service_type:type.value,category,budget:fd.get("budget"),deadline:fd.get("deadline")||null,brief:fd.get("brief"),answers,status:"new"}).select().single();
- if(error)return toast(error.message,"error");toast("Project request created.");setTimeout(()=>location.href="project.html?id="+data.id,600)
+ const btn=e.target.querySelector('button');btn.disabled=true;
+ const submission_key=e.target.dataset.submissionKey || crypto.randomUUID();e.target.dataset.submissionKey=submission_key;
+ try {
+  const result=await RENOBVA_PROJECT_FLOW.submit(renobva.sb,{submission_key,title:fd.get('title'),service_type:type.value,budget:fd.get('budget'),deadline:fd.get('deadline')||null,brief:fd.get('brief'),answers});
+  location.href='project.html?id='+encodeURIComponent(result.project_id);
+ } catch(error){toast(error.message,'error')}
+ finally{btn.disabled=false}
+
 });

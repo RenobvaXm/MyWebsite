@@ -72,3 +72,11 @@ section{padding:105px 0}.sectionhead{display:flex;justify-content:space-between;
 
 /* Closed/completed conversation state */
 .closed-chat-banner{display:flex;align-items:center;gap:12px;margin:0 0 10px;padding:12px 15px;border:1px solid #343a43;border-radius:12px;background:#15181d;color:#d4d8de}.closed-chat-banner>span{width:31px;height:31px;display:grid;place-items:center;border-radius:50%;background:#26332b;color:#79d99a}.closed-chat-banner div{display:grid;gap:2px}.closed-chat-banner b{font-size:12px}.closed-chat-banner small{font-size:10px;color:#777f8b}.chat-compose.chat-locked{opacity:.72}.chat-compose.chat-locked .compose-row input{cursor:not-allowed;color:#777f8b}.chat-compose.chat-locked .attach-btn,.chat-compose.chat-locked button[type=submit]{cursor:not-allowed;filter:saturate(.35)}
+
+/* Preserve true hidden states for notices, uploads and admin controls. */
+[hidden] { display: none !important; }
+.project-brief { padding: 18px 22px; margin-top: 20px; background: #151519; border: 1px solid #333039; border-radius: 12px; }
+.project-brief summary { cursor: pointer; color: #ff9675; font-weight: 600; }
+.project-brief p { font-size: 14px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; color: #c6bfc4; }
+.dot[data-realtime="connecting"] { background: #d09b3b; }
+.dot[data-realtime="online"] { background: #48c78a; }

@@ -1,5 +1,5 @@
 
-let projectId=new URLSearchParams(location.search).get("id"),ctx,channel,projectData;
+let projectId=new URLSearchParams(location.search).get("id"),ctx,channel,projectData,refreshTimer,refreshBusy=false;
 const esc=s=>(s??"").toString().replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const seen=new Set(), bucket="project-files", profileCache=new Map();
 let allMessages=[], replyTarget=null;
@@ -7,8 +7,8 @@ const fmtDay=d=>{const x=new Date(d),now=new Date(),y=new Date(now);y.setDate(no
 
 async function getProfile(userId){
  if(profileCache.has(userId))return profileCache.get(userId);
- const {data}=await renobva.sb.from("profiles").select("id,display_name,role,avatar_url").eq("id",userId).maybeSingle();
- let p=data;
+ const {data}=await renobva.sb.rpc("chat_profile",{p_project:projectId,p_user:userId});
+ let p=data?.[0];
  if(!p && userId!==ctx?.user?.id && projectData?.user_id===ctx?.user?.id){
    const a=window.RENOBVA_ADMIN_PROFILE||{};
    p={id:userId,display_name:a.name||"Renobva",role:"admin",avatar_url:a.avatarUrl||null};
@@ -70,6 +70,7 @@ async function load(){
  ctx=await requireAuth(location.pathname.includes("/admin/"));if(!ctx||!projectId)return;
  const {data:p,error}=await renobva.sb.from("projects").select("*").eq("id",projectId).single();
  if(error||!p){toast("Project not found.","error");return} projectData=p;
+ renderProjectDetails(p);
  document.querySelector("#projectTitle").textContent=p.title;document.querySelector("#projectService").textContent=p.service_type;setStatus(p.status);updateChatLock(p.status);
  const isAdmin=ctx.profile?.role==="admin";
  const adminControls=document.querySelector("#adminProjectControls");
@@ -78,6 +79,7 @@ async function load(){
  if(clientControls)clientControls.hidden=isAdmin||["cancelled","completed"].includes(p.status);
  const {data:msgs}=await renobva.sb.from("messages").select("*").eq("project_id",projectId).order("created_at");
  await Promise.all((msgs||[]).map(hydrateMessage));await render(msgs||[]);
+ refreshTimer=setInterval(refreshConversation,5000);
  channel=renobva.sb.channel("renobva-chat-"+projectId+"-"+ctx.user.id)
  .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:`project_id=eq.${projectId}`},async payload=>{
    if(seen.has(payload.new.id))return;
@@ -88,11 +90,12 @@ async function load(){
    projectData=payload.new;setStatus(payload.new.status);updateChatLock(payload.new.status);
  }).subscribe(status=>{let d=document.querySelector(".dot");if(d)d.dataset.realtime=status==="SUBSCRIBED"?"online":"connecting"});
 }
-function setStatus(s){let x=document.querySelector("#projectStatus");if(x)x.textContent=s;let sel=
+function setStatus(s){const x=document.querySelector("#projectStatus");if(x)x.textContent=s;const sel=document.querySelector("#projectStatusSelect");if(sel)sel.value=s}
+
 function bindMessageActions(){
  document.querySelectorAll("[data-reply]").forEach(b=>b.onclick=()=>{replyTarget=allMessages.find(x=>x.id===b.dataset.reply);showReply()});
  document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=async()=>{const m=allMessages.find(x=>x.id===b.dataset.edit),v=prompt("Edit message",m?.body||"");if(v===null||!v.trim())return;const {error}=await renobva.sb.from("messages").update({body:v.trim(),edited_at:new Date().toISOString()}).eq("id",m.id);if(error)toast(error.message,"error")});
- document.querySelectorAll("[data-delete-message]").forEach(b=>b.onclick=async()=>{if(!confirm("Remove this message?"))return;const {error}=await renobva.sb.from("messages").update({body:null,attachment_path:null,attachment_name:null,attachment_type:null,attachment_size:null,deleted_at:new Date().toISOString()}).eq("id",b.dataset.deleteMessage);if(error)toast(error.message,"error")});
+ document.querySelectorAll("[data-delete-message]").forEach(b=>b.onclick=async()=>{if(!confirm("Remove this message?"))return;const {error}=await renobva.sb.from("messages").update({body:"",attachment_path:null,attachment_name:null,attachment_type:null,attachment_size:null,deleted_at:new Date().toISOString()}).eq("id",b.dataset.deleteMessage);if(error)toast(error.message,"error")});
  document.querySelectorAll("[data-jump]").forEach(b=>b.onclick=()=>{const el=document.querySelector(`[data-message-id="${b.dataset.jump}"]`);el?.scrollIntoView({behavior:"smooth",block:"center"});el?.classList.add("message-flash");setTimeout(()=>el?.classList.remove("message-flash"),1200)});
 }
 function showReply(){
@@ -106,7 +109,7 @@ document.querySelector("#chatSearchClose")?.addEventListener("click",()=>{search
 searchInput?.addEventListener("input",e=>filterMessages(e.target.value));
 function filterMessages(q){q=q.toLowerCase().trim();document.querySelectorAll("#messages .message").forEach(el=>{const m=allMessages.find(x=>x.id===el.dataset.messageId);el.hidden=!!q&&!`${m?.body||""} ${m?.attachment_name||""}`.toLowerCase().includes(q)})}
 document.querySelector("#chatInfoToggle")?.addEventListener("click",()=>toast(`Project: ${projectData?.title||""} • Status: ${projectData?.status||""}`));
-document.querySelector("#projectStatusSelect");if(sel)sel.value=s}
+
 async function render(ms){seen.clear();allMessages=ms;let html=[],lastDay="";for(const m of ms){seen.add(m.id);const day=fmtDay(m.created_at);if(day!==lastDay){html.push(`<div class="day-divider"><span>${day}</span></div>`);lastDay=day}html.push(await bubble(m))}document.querySelector("#messages").innerHTML=html.join("");bindMessageActions();scrollChat()}
 async function append(m){if(!m||seen.has(m.id))return;seen.add(m.id);allMessages.push(m);document.querySelector("#messages").insertAdjacentHTML("beforeend",await bubble(m));bindMessageActions();scrollChat()}
 function scrollChat(){let el=document.querySelector("#messages");el.scrollTop=el.scrollHeight}
@@ -200,7 +203,7 @@ async function uploadFolderBundle(folderName,items){
  const manifestPath=`${projectId}/folders/${bundleId}/__renobva_folder_manifest.json`;
  const {error:me}=await renobva.sb.storage.from(bucket).upload(manifestPath,blob,{contentType:"application/json"});if(me)throw me;
  const {data:m,error}=await renobva.sb.from("messages").insert({
-   project_id:projectId,sender_id:ctx.user.id,body:null,reply_to:replyTarget?.id||null,client_nonce:crypto.randomUUID(),
+   project_id:projectId,sender_id:ctx.user.id,body:"",reply_to:replyTarget?.id||null,client_nonce:crypto.randomUUID(),
    attachment_path:manifestPath,attachment_name:folderName,attachment_type:"application/x-renobva-folder",attachment_size:items.reduce((n,x)=>n+x.file.size,0)
  }).select("*").single();
  if(error)throw error;await hydrateMessage(m);await append(m);
@@ -228,22 +231,43 @@ document.querySelector("#chatForm").addEventListener("submit",async e=>{
    }
    pendingFiles=[];pendingFolders.clear();renderQueue();clearReply();input.focus();
  }catch(err){toast(err.message||"Upload failed.","error")}
- finally{btn.disabled=false;btn.textContent="Send"}
+ finally{updateChatLock(projectData?.status);if(!isClosedStatus(projectData?.status)){btn.disabled=false;btn.textContent="Send"}}
 });
 
 document.querySelector("#projectStatusSelect")?.addEventListener("change",async e=>{
  const {error}=await renobva.sb.from("projects").update({status:e.target.value,updated_at:new Date().toISOString()}).eq("id",projectId);
+ if(!error){projectData.status=e.target.value;setStatus(e.target.value);updateChatLock(e.target.value)}
  toast(error?error.message:"Project progress updated.",error?"error":"ok");
 });
 document.querySelector("#clientCloseTicket")?.addEventListener("click",async()=>{
  if(!confirm("Close your ticket? RENOBVA will still keep the conversation and project history."))return;
  const {error}=await renobva.sb.from("projects").update({status:"cancelled",updated_at:new Date().toISOString()}).eq("id",projectId).eq("user_id",ctx.user.id);
  if(error)return toast(error.message,"error");
- setStatus("cancelled");document.querySelector("#clientTicketControls").hidden=true;toast("Your ticket has been closed.");
+ projectData.status="cancelled";setStatus("cancelled");updateChatLock("cancelled");document.querySelector("#clientTicketControls").hidden=true;toast("Your ticket has been closed.");
 });
 document.querySelector("#closeTicket")?.addEventListener("click",async()=>{
  if(!confirm("Close this ticket? The conversation will stay saved."))return;
  const {error}=await renobva.sb.from("projects").update({status:"completed",updated_at:new Date().toISOString()}).eq("id",projectId);
- if(error)return toast(error.message,"error");setStatus("completed");toast("Ticket closed.");
+ if(error)return toast(error.message,"error");projectData.status="completed";setStatus("completed");updateChatLock("completed");toast("Ticket closed.");
 });
-window.addEventListener("beforeunload",()=>{if(channel)renobva.sb.removeChannel(channel)});load();
+window.addEventListener("beforeunload",()=>{clearInterval(refreshTimer);if(channel)renobva.sb.removeChannel(channel)});
+function renderProjectDetails(p){
+ const title=document.querySelector('.portal-title');if(!title)return;
+ let detail=document.querySelector('#projectBrief');if(!detail){detail=document.createElement('div');detail.id='projectBrief';detail.className='project-brief';title.appendChild(detail)}
+ detail.innerHTML=`<details><summary>Project details · ${esc(p.budget||'Budget not specified')}</summary><p>${esc(p.brief||'')}</p><p><b>Preferred deadline:</b> ${esc(p.deadline||'Not specified')}</p>${Object.entries(p.answers||{}).map(([key,value])=>`<p><b>${esc(key)}:</b> ${esc(typeof value==='string'?value:JSON.stringify(value))}</p>`).join('')}</details>`;
+}
+async function refreshConversation(){
+ if(!ctx || refreshBusy || document.hidden)return;refreshBusy=true;
+ try{
+  const [{data:messages,error},{data:p}]=await Promise.all([renobva.sb.from('messages').select('*').eq('project_id',projectId).order('created_at'),renobva.sb.from('projects').select('*').eq('id',projectId).single()]);
+  if(error)return;
+  const changed=messages.length!==allMessages.length || messages.some((m,i)=>JSON.stringify([m.id,m.body,m.edited_at,m.deleted_at,m.attachment_path])!==JSON.stringify([allMessages[i]?.id,allMessages[i]?.body,allMessages[i]?.edited_at,allMessages[i]?.deleted_at,allMessages[i]?.attachment_path]));
+  if(changed){profileCache.clear();await Promise.all(messages.map(hydrateMessage));await render(messages)}
+  if(p){projectData=p;setStatus(p.status);updateChatLock(p.status)}
+ }finally{refreshBusy=false}
+}
+(async()=>{
+ const saved=sessionStorage.getItem('renobva.project-notice');if(!saved)return;
+ try{const result=JSON.parse(saved);if(result.id===projectId){toast(result.email_status==='sent'?'Project created. Confirmation emails sent.':'Project created. Chat is ready; email notifications are not activated yet.',result.email_status==='sent'?'ok':'warn');sessionStorage.removeItem('renobva.project-notice')}}catch{}
+})();
+load();
