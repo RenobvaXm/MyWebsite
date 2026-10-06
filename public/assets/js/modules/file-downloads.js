@@ -1,0 +1,20 @@
+/* Authenticated downloads and an uncompressed ZIP; no public file URLs or extra service. */
+window.RENOBVA_FILES = (() => {
+ const safe = name => String(name||'file').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').replace(/^\.+/,'_').slice(0,160);
+ const safePath = path => String(path||'file').split(/[\\/]/).filter(x=>x&&x!=='.'&&x!=='..').map(safe).join('/');
+ const table=Array.from({length:256},(_,n)=>{for(let i=0;i<8;i++)n=(n&1)?0xedb88320^(n>>>1):n>>>1;return n>>>0});
+ function crc(bytes){let n=0xffffffff;for(const b of bytes)n=table[(n^b)&255]^(n>>>8);return (n^0xffffffff)>>>0}
+ function zip(entries){const chunks=[],central=[];let offset=0;const enc=new TextEncoder();for(const e of entries){const name=enc.encode(safePath(e.name)),data=e.bytes,c=crc(data),head=new Uint8Array(30+name.length),v=new DataView(head.buffer);v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x800,true);v.setUint32(14,c,true);v.setUint32(18,data.length,true);v.setUint32(22,data.length,true);v.setUint16(26,name.length,true);head.set(name,30);chunks.push(head,data);const cd=new Uint8Array(46+name.length),d=new DataView(cd.buffer);d.setUint32(0,0x02014b50,true);d.setUint16(4,20,true);d.setUint16(6,20,true);d.setUint16(8,0x800,true);d.setUint32(16,c,true);d.setUint32(20,data.length,true);d.setUint32(24,data.length,true);d.setUint16(28,name.length,true);d.setUint32(42,offset,true);cd.set(name,46);central.push(cd);offset+=head.length+data.length}const size=central.reduce((n,x)=>n+x.length,0),end=new Uint8Array(22),v=new DataView(end.buffer);v.setUint32(0,0x06054b50,true);v.setUint16(8,entries.length,true);v.setUint16(10,entries.length,true);v.setUint32(12,size,true);v.setUint32(16,offset,true);return new Blob([...chunks,...central,end],{type:'application/zip'})}
+ function save(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=safe(name);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)}
+ async function blob(sb,path){const {data,error}=await sb.storage.from('project-files').download(path);if(error||!data)throw error||new Error('File unavailable');return data}
+ async function entriesFor(sb,file,projectId){
+  if(!file.attachment_path?.startsWith(projectId+'/'))throw new Error('Invalid project file');
+  const data=await blob(sb,file.attachment_path);
+  if(file.attachment_type!=='application/x-renobva-folder')return [{name:safe(file.attachment_name),bytes:new Uint8Array(await data.arrayBuffer())}];
+  const manifest=JSON.parse(await data.text());if(!Array.isArray(manifest.files)||manifest.files.length>500)throw new Error('Invalid folder');
+  const entries=[];let total=0;for(const item of manifest.files){if(!item.storagePath?.startsWith(projectId+'/folders/'))throw new Error('Invalid folder file');const b=await blob(sb,item.storagePath);total+=b.size;if(total>250*1024*1024)throw new Error('Folder is too large for a browser ZIP. Download files separately.');entries.push({name:safePath(item.path),bytes:new Uint8Array(await b.arrayBuffer())})}return entries;
+ }
+ async function one(sb,file,projectId){if(file.attachment_type==='application/x-renobva-folder'){save(zip(await entriesFor(sb,file,projectId)),safe(file.attachment_name)+'.zip')}else{if(!file.attachment_path?.startsWith(projectId+'/'))throw new Error('Invalid project file');save(await blob(sb,file.attachment_path),file.attachment_name)}}
+ async function all(sb,files,projectId,title,onProgress=()=>{}){const entries=[],used=new Set();let total=0;for(let i=0;i<files.length;i++){onProgress(i+1,files.length);for(const entry of await entriesFor(sb,files[i],projectId)){total+=entry.bytes.length;if(total>250*1024*1024)throw new Error('Files exceed the 250 MB ZIP limit. Download them individually.');const raw=entry.name;let name=raw,n=1;while(used.has(name))name=(++n)+'-'+raw;used.add(name);entries.push({name:safe(title||'Project')+'/'+name,bytes:entry.bytes})}}save(zip(entries),safe(title||'Project')+'-files.zip')}
+ return {one,all,zip};
+})();

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width" />
     <title>Dashboard | RENOBVA Admin</title>
     <link rel="stylesheet" href="../../assets/css/style.css" />
-  </head>
-  <body class="portal-body">
+  <link rel="stylesheet" href="../../assets/css/brief.css"><link rel="stylesheet" href="../../assets/css/admin.css"><link rel="stylesheet" href="../../assets/css/files.css"></head>
+  <body class="portal-body admin-workspace">
     <div class="portal-shell">
       <aside class="portal-side">
         <a class="portal-logo" href="../../index.html"
@@ -31,10 +31,9 @@
         </div>
         <section class="portal-title">
           <span class="eyebrow">ADMIN CONTROL</span>
-          <h1>RENOBVA Dashboard.</h1>
+          <h1>Your project workspace.</h1>
           <p>
-            Manage clients, projects, statuses and conversations from one
-            workspace.
+            Review new requests, keep projects moving, and stay close to your clients.
           </p>
         </section>
         <div class="admin-stats">
@@ -49,33 +48,16 @@
             <small>Active projects</small><strong id="countActive">—</strong>
           </div>
         </div>
-        <div class="admin-toolbar">
-          <input
-            id="adminSearch"
-            placeholder="Search project, client or email..."
-          /><select id="adminFilter">
-            <option value="all">All statuses</option>
-            <option>new</option>
-            <option>questions</option>
-            <option>in progress</option>
-            <option>review</option>
-            <option>completed</option>
-            <option>cancelled</option>
-          </select>
-        </div>
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Project / Client</th>
-                <th>Service / Budget</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="adminProjects"></tbody>
-          </table>
-        </div>
+
+        <div class="admin-section-head"><div><span class="eyebrow">YOUR BUSINESS AT A GLANCE</span><h2>Keep everything moving.</h2></div><button class="btn" id="adminRefresh">↻ Refresh</button></div>
+        <div class="admin-view-tabs" role="group" aria-label="Workspace view"><button class="selected" data-view="projects">Project inbox</button><button data-view="clients">Clients</button></div>
+        <section id="projectInbox">
+          <div class="admin-toolbar"><input id="adminSearch" aria-label="Search projects" placeholder="Search projects, clients or services…"><select id="adminFilter" aria-label="Filter status"><option value="all">All statuses</option><option>new</option><option>questions</option><option>in progress</option><option>review</option><option>completed</option><option>cancelled</option></select><select id="adminSort" aria-label="Sort projects"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="deadline">Deadline first</option><option value="name">Project name</option></select></div>
+          <div class="admin-queue-tabs" role="group" aria-label="Project queue"><button data-queue="all" class="selected">All projects</button><button data-queue="attention">Needs attention <span id="attentionCount">0</span></button><button data-queue="active">In progress</button><button data-queue="closed">Closed</button></div>
+          <div class="admin-result-line"><span id="adminResultCount" aria-live="polite">Loading your workspace…</span><span>Open a brief to review answers & files</span></div>
+          <div id="adminProjects" class="admin-project-grid"></div><div class="admin-pagination"><button class="btn" id="adminPrev">← Previous</button><span id="adminPage"></span><button class="btn" id="adminNext">Next →</button></div>
+        </section>
+        <section id="clientDirectory" hidden><div class="admin-toolbar"><input id="clientSearch" aria-label="Search clients" placeholder="Search clients by name or email…"></div><div id="adminClients" class="admin-client-grid"></div></section>
         <section class="admin-help">
           <div>
             <span class="eyebrow">WORKFLOW</span>
@@ -94,6 +76,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0"></script>
     <script src="../../assets/js/supabase-config.js"></script>
     <script src="../../assets/js/modules/portal-core.js"></script>
-    <script src="../../assets/js/modules/admin.js"></script>
+    <script src="../../assets/js/modules/file-downloads.js"></script><script src="../../assets/js/modules/admin.js"></script>
   </body>
 </html>

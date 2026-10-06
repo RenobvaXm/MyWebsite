@@ -1,5 +1,5 @@
 (() => {
-  let payCtx=null, payProject=null, payRequests=[], payChannel=null;
+  let payCtx=null, payProject=null, payRequests=[], payChannel=null, payTimer=null, syncing=false, syncAgain=false, stopped=false;
   const cfg=window.RENOBVA_PAYMENTS||{};
   const $=s=>document.querySelector(s);
   const esc=s=>(s??"").toString().replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
@@ -129,13 +129,39 @@
     const {data,error}=await renobva.sb.from("payment_requests").update(patch).eq("id",id).select("*").single();if(error)return toast(error.message,"error");payRequests=payRequests.map(x=>x.id===id?data:x);renderDock();toast(status==="paid"?"Payment confirmed.":"Payment request cancelled.");
   }
   function bindClose(){$("#paymentModal")?.querySelectorAll("[data-close-pay]").forEach(x=>x.onclick=closeModal)}function closeModal(){const m=$("#paymentModal");if(m)m.hidden=true}
+  async function syncPayments(){
+    if(stopped||!payProject)return;
+    if(syncing){syncAgain=true;return}
+    syncing=true;
+    try{
+      const {data,error}=await renobva.sb.from('payment_requests').select('*').eq('project_id',payProject.id).order('created_at');
+      // Keep the last successful state during temporary network errors.
+      if(!error&&!stopped&&JSON.stringify(data||[])!==JSON.stringify(payRequests)){
+        payRequests=data||[];renderDock();
+      }
+    }catch{
+      // Retry on the next live event or automatic check.
+    }finally{
+      syncing=false;
+      if(syncAgain&&!stopped){syncAgain=false;syncPayments()}
+    }
+  }
   async function init(){
     const id=new URLSearchParams(location.search).get("id");if(!id)return;
     for(let i=0;i<40&&!window.renobva;i++)await new Promise(r=>setTimeout(r,100));if(!window.renobva)return;
     payCtx=await requireAuth(location.pathname.includes("/admin/"));if(!payCtx)return;
     const {data:p}=await renobva.sb.from("projects").select("id,user_id,title,service_type,budget").eq("id",id).single();if(!p)return;payProject=p;ensureUI();
-    const {data}=await renobva.sb.from("payment_requests").select("*").eq("project_id",id).order("created_at");payRequests=data||[];renderDock();
-    payChannel=renobva.sb.channel("renobva-payments-"+id+"-"+payCtx.user.id).on("postgres_changes",{event:"*",schema:"public",table:"payment_requests",filter:`project_id=eq.${id}`},async()=>{const {data:r}=await renobva.sb.from("payment_requests").select("*").eq("project_id",id).order("created_at");payRequests=r||[];renderDock()}).subscribe();
+    // Subscribe before the initial read; polling covers interrupted realtime connections.
+    payChannel=renobva.sb.channel("renobva-payments-"+id+"-"+payCtx.user.id)
+      .on("postgres_changes",{event:"*",schema:"public",table:"payment_requests",filter:`project_id=eq.${id}`},()=>syncPayments())
+      .subscribe(status=>{if(status==="SUBSCRIBED")syncPayments()});
+    await syncPayments();
+    payTimer=setInterval(()=>{if(!document.hidden)syncPayments()},2000);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncPayments()});
+    window.addEventListener('focus',()=>syncPayments());
+    window.addEventListener('pagehide',()=>{stopped=true;clearInterval(payTimer);if(payChannel)renobva.sb.removeChannel(payChannel)});
+    window.addEventListener('pageshow',event=>{if(event.persisted)location.reload()});
+
   }
   init();
 })();

@@ -28,15 +28,12 @@ function avatar(profile){
 function adminBadge(profile){return profile?.role==="admin"?`<span class="admin-badge" title="RENOBVA administrator">◆ ADMIN</span>`:""}
 async function signedUrl(path){if(!path)return null;const {data}=await renobva.sb.storage.from(bucket).createSignedUrl(path,3600);return data?.signedUrl||null}
 async function attachmentHtml(m){
- if(!m.attachment_path)return "";
- const url=await signedUrl(m.attachment_path);if(!url)return "";
- const type=m.attachment_type||"",name=esc(m.attachment_name||"Attachment");
- if(type==="application/x-renobva-folder")return `<a class="file-card folder-card" href="${url}" target="_blank"><span class="file-icon">▰</span><span><b>${name}</b><small>Folder • ${formatBytes(m.attachment_size)}</small></span><span class="folder-preserved">Structure preserved</span></a>`;
- if(type.startsWith("image/"))return `<a class="chat-image-link" href="${url}" target="_blank"><img class="chat-image" src="${url}" alt="${name}"></a><a class="attachment-name" href="${url}" target="_blank">↗ ${name}</a>`;
- return `<a class="file-card" href="${url}" target="_blank"><span class="file-icon">↧</span><span><b>${name}</b><small>${formatBytes(m.attachment_size)}</small></span></a>`;
+ if(!m.attachment_path)return '';
+ return `<details class="download-item"><summary>▤ ${esc(m.attachment_name||'Attachment')} <small>${formatBytes(m.attachment_size)}</small></summary><div class="download-actions"><button type="button" data-download-file="${m.id}">↓ Download${m.attachment_type==='application/x-renobva-folder'?' folder ZIP':''}</button></div></details>`;
 }
 function formatBytes(n){if(!n)return "File";if(n<1024)return n+" B";if(n<1048576)return (n/1024).toFixed(1)+" KB";return (n/1048576).toFixed(1)+" MB"}
 async function bubble(m){
+ if(m.body==="Project brief attachment" && m.attachment_path && !m.deleted_at)return "";
  let mine=m.sender_id===ctx.user.id,p=m.profiles||{},name=p.display_name||(p.role==="admin"?"RENOBVA":"Client");
  if(m.deleted_at)return `<div class="message ${mine?"mine":""}" data-message-id="${m.id}"><div class="message-person">${avatar(p)}<div class="message-stack"><div class="message-meta"><b>${mine?"You":esc(name)}</b>${adminBadge(p)}<span>${new Date(m.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span></div><div class="bubble deleted-message">Message removed</div></div></div></div>`;
  let reply="";
@@ -53,7 +50,7 @@ function updateChatLock(status){
  const locked=isClosedStatus(status),form=document.querySelector("#chatForm");
  if(!form)return;
  form.classList.toggle("chat-locked",locked);
- const input=form.querySelector('input[name="message"]'),send=form.querySelector('button[type="submit"]'),attach=document.querySelector("#attachMenuButton");
+ const input=form.querySelector('[name="message"]'),send=form.querySelector('button[type="submit"]'),attach=document.querySelector("#attachMenuButton");
  if(input){input.disabled=locked;input.placeholder=locked?(status==="completed"?"This project is finished. The conversation is read-only.":"This ticket is closed. The conversation is read-only."):"Write a message..."}
  if(send){send.disabled=locked;send.textContent=locked?"Closed":"Send"}
  if(attach)attach.disabled=locked;
@@ -93,6 +90,7 @@ async function load(){
 function setStatus(s){const x=document.querySelector("#projectStatus");if(x)x.textContent=s;const sel=document.querySelector("#projectStatusSelect");if(sel)sel.value=s}
 
 function bindMessageActions(){
+ bindFileDownloads();renderProjectFiles();
  document.querySelectorAll("[data-reply]").forEach(b=>b.onclick=()=>{replyTarget=allMessages.find(x=>x.id===b.dataset.reply);showReply()});
  document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=async()=>{const m=allMessages.find(x=>x.id===b.dataset.edit),v=prompt("Edit message",m?.body||"");if(v===null||!v.trim())return;const {error}=await renobva.sb.from("messages").update({body:v.trim(),edited_at:new Date().toISOString()}).eq("id",m.id);if(error)toast(error.message,"error")});
  document.querySelectorAll("[data-delete-message]").forEach(b=>b.onclick=async()=>{if(!confirm("Remove this message?"))return;const {error}=await renobva.sb.from("messages").update({body:"",attachment_path:null,attachment_name:null,attachment_type:null,attachment_size:null,deleted_at:new Date().toISOString()}).eq("id",b.dataset.deleteMessage);if(error)toast(error.message,"error")});
@@ -100,7 +98,7 @@ function bindMessageActions(){
 }
 function showReply(){
  let box=document.querySelector("#replyComposer");if(!box){box=document.createElement("div");box.id="replyComposer";box.className="reply-composer";document.querySelector("#chatForm").prepend(box)}
- box.innerHTML=`<span><b>Replying</b>${esc(replyTarget?.body||replyTarget?.attachment_name||"Attachment")}</span><button type="button" id="cancelReply">×</button>`;box.hidden=false;document.querySelector("#cancelReply").onclick=clearReply;document.querySelector('#chatForm input[name="message"]').focus()
+ box.innerHTML=`<span><b>Replying</b>${esc(replyTarget?.body||replyTarget?.attachment_name||"Attachment")}</span><button type="button" id="cancelReply">×</button>`;box.hidden=false;document.querySelector("#cancelReply").onclick=clearReply;document.querySelector('#chatForm [name="message"]').focus()
 }
 function clearReply(){replyTarget=null;const b=document.querySelector("#replyComposer");if(b)b.hidden=true}
 const searchBox=document.querySelector("#chatSearch"),searchInput=document.querySelector("#chatSearchInput");
@@ -110,9 +108,16 @@ searchInput?.addEventListener("input",e=>filterMessages(e.target.value));
 function filterMessages(q){q=q.toLowerCase().trim();document.querySelectorAll("#messages .message").forEach(el=>{const m=allMessages.find(x=>x.id===el.dataset.messageId);el.hidden=!!q&&!`${m?.body||""} ${m?.attachment_name||""}`.toLowerCase().includes(q)})}
 document.querySelector("#chatInfoToggle")?.addEventListener("click",()=>toast(`Project: ${projectData?.title||""} • Status: ${projectData?.status||""}`));
 
-async function render(ms){seen.clear();allMessages=ms;let html=[],lastDay="";for(const m of ms){seen.add(m.id);const day=fmtDay(m.created_at);if(day!==lastDay){html.push(`<div class="day-divider"><span>${day}</span></div>`);lastDay=day}html.push(await bubble(m))}document.querySelector("#messages").innerHTML=html.join("");bindMessageActions();scrollChat()}
-async function append(m){if(!m||seen.has(m.id))return;seen.add(m.id);allMessages.push(m);document.querySelector("#messages").insertAdjacentHTML("beforeend",await bubble(m));bindMessageActions();scrollChat()}
-function scrollChat(){let el=document.querySelector("#messages");el.scrollTop=el.scrollHeight}
+async function render(ms){seen.clear();allMessages=ms;let html=[],lastDay="";for(const m of ms){seen.add(m.id);if(m.body==="Project brief attachment"&&m.attachment_path&&!m.deleted_at)continue;const day=fmtDay(m.created_at);if(day!==lastDay){html.push(`<div class="day-divider"><span>${day}</span></div>`);lastDay=day}html.push(await bubble(m))}document.querySelector("#messages").innerHTML=html.join("")||`<div class="chat-empty"><span>✦</span><h3>Your conversation starts here.</h3><p>Share a question, an idea, or feedback.<br>Your project files are available above.</p></div>`;bindMessageActions();renderProjectFiles();bindFileDownloads();scrollChat()}
+async function append(m){if(!m||seen.has(m.id))return;seen.add(m.id);allMessages.push(m);document.querySelector(".chat-empty")?.remove();document.querySelector("#messages").insertAdjacentHTML("beforeend",await bubble(m));bindMessageActions();renderProjectFiles();bindFileDownloads();scrollChat()}
+let followLatest=true;
+const messageArea=document.querySelector('#messages');
+messageArea.addEventListener('scroll',()=>{followLatest=messageArea.scrollHeight-messageArea.scrollTop-messageArea.clientHeight<100});
+function scrollChat(){if(followLatest){messageArea.scrollTop=messageArea.scrollHeight}else{let button=document.querySelector('#chatLatest');if(!button){button=document.createElement('button');button.id='chatLatest';button.type='button';button.className='chat-latest';button.textContent='↓ Latest messages';messageArea.parentNode.insertBefore(button,messageArea.nextSibling);button.onclick=()=>{followLatest=true;messageArea.scrollTop=messageArea.scrollHeight;button.remove()}}}}
+const composer=document.querySelector('#chatForm [name="message"]');
+composer.addEventListener('input',()=>{composer.style.height='auto';composer.style.height=Math.min(composer.scrollHeight,150)+'px'});
+composer.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&matchMedia('(pointer:fine)').matches){event.preventDefault();if(!document.querySelector('#chatForm button[type=submit]').disabled)document.querySelector('#chatForm').requestSubmit()}});
+
 
 
 let pendingFiles=[];
@@ -216,7 +221,7 @@ document.querySelector("#chatForm").addEventListener("submit",async e=>{
  try{
    if(body){
      const {data:m,error}=await renobva.sb.from("messages").insert({project_id:projectId,sender_id:ctx.user.id,body,reply_to:replyTarget?.id||null,client_nonce:crypto.randomUUID()}).select("*").single();
-     if(error)throw error;await hydrateMessage(m);await append(m);input.value="";
+     if(error)throw error;await hydrateMessage(m);await append(m);input.value="";input.style.height="auto";
    }
    for(const [folderName,items] of [...pendingFolders.entries()])await uploadFolderBundle(folderName,items);
    pendingFolders.clear();
@@ -271,3 +276,17 @@ async function refreshConversation(){
  try{const result=JSON.parse(saved);if(result.id===projectId){toast(result.email_status==='sent'?'Project created. Confirmation emails sent.':'Project created. Chat is ready; email notifications are not activated yet.',result.email_status==='sent'?'ok':'warn');sessionStorage.removeItem('renobva.project-notice')}}catch{}
 })();
 load();
+
+function bindFileDownloads(){
+ document.querySelectorAll('[data-download-file]').forEach(button=>button.onclick=async()=>{
+ const file=allMessages.find(m=>m.id===button.dataset.downloadFile);if(!file)return;button.disabled=true;const text=button.textContent;button.textContent='Downloading…';
+ try{await RENOBVA_FILES.one(renobva.sb,file,projectId)}catch(error){toast(error.message||'Download failed. Please try again.','error')}finally{button.disabled=false;button.textContent=text}
+ });
+}
+function renderProjectFiles(){
+ const files=allMessages.filter(m=>m.attachment_path&&!m.deleted_at);
+ let panel=document.querySelector('#projectFilesDropdown');if(!panel){panel=document.createElement('details');panel.id='projectFilesDropdown';panel.className='project-files-dropdown';const messages=document.querySelector('#messages');messages.parentNode.insertBefore(panel,messages)}
+ const open=panel.open;panel.hidden=!files.length;
+ panel.innerHTML=`<summary><span>▤ Project files <b>${files.length}</b></span><span>View & download ⌄</span></summary><div class="project-file-content"><div class="project-file-toolbar"><p>All shared assets in one place.</p><button type="button" id="downloadProjectZip">↓ Download all ZIP</button></div>${files.map(m=>`<div class="project-file-row"><span><b>${esc(m.attachment_name||'Attachment')}</b><small>${formatBytes(m.attachment_size)}${m.body==='Project brief attachment'?' · Client brief':''}</small></span><button type="button" data-download-file="${m.id}">↓ Download</button></div>`).join('')}<small class="download-hint">ZIP files contain a project folder. Downloads use your browser’s save location.</small></div>`;
+ panel.open=open;bindFileDownloads();panel.querySelector('#downloadProjectZip').onclick=async()=>{const button=panel.querySelector('#downloadProjectZip');button.disabled=true;try{await RENOBVA_FILES.all(renobva.sb,files,projectId,projectData?.title,(i,n)=>button.textContent=`Preparing ${i}/${n}…`)}catch(error){toast(error.message||'Download failed. Please try again.','error')}finally{button.disabled=false;button.textContent='↓ Download all ZIP'}};
+}

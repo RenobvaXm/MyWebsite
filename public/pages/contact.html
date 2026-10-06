@@ -6,7 +6,7 @@
     <title>Contact | RENOBVA</title>
     <link rel="icon" href="../assets/images/brand/renobva.ico" />
     <link rel="stylesheet" href="../assets/css/style.css" />
-  </head>
+  <link rel="stylesheet" href="../assets/css/brief.css"></head>
   <body>
     <header class="navbar">
       <div class="container navin">
@@ -47,42 +47,17 @@
         </div>
       </section>
       <section>
-        <div class="container contactgrid">
+        <div class="container brief-contact">
           <div>
             <span class="eyebrow">Project enquiry</span>
             <h2 style="font: 700 45px Manrope">
-              A few details are enough to start.
+              Your idea. A clear plan.
             </h2>
             <p class="lead">
               Tell RENOBVA what you need. Sign in to create your project and chat directly with RENOBVA. Your selected details are kept when you register or log in.
             </p>
           </div>
-          <form class="contactform" id="contactForm">
-            <div class="notice" id="contactNotice" hidden></div>
-            <input name="name" required placeholder="Your name" /><input
-              type="email"
-              name="email"
-              required
-              placeholder="Email address"
-            /><select name="service">
-              <option>Business Website</option>
-              <option>Full-Stack Project</option>
-              <option>Website Redesign</option>
-              <option>Birthday Website</option>
-              <option>Anniversary / Love</option>
-              <option>Mother's Day</option>
-              <option>Wedding / Proposal</option>
-              <option>Custom Celebration</option></select
-            ><select name="budget">
-              <option>Budget / package</option>
-              <option>€49–€99</option>
-              <option>€100–€200</option>
-              <option>€200–€400</option>
-              <option>€500–€1,200</option>
-              <option>€1,200+</option></select
-            ><textarea name="message" required placeholder="Tell me about the project..."></textarea>
-            <button type="submit" class="btn primary">Send project request →</button>
-          </form>
+          <div id="projectWizard"></div>
         </div>
       </section>
     </main>
@@ -125,6 +100,6 @@
     <script src="../assets/js/supabase-config.js"></script>
     <script src="../assets/js/modules/site-auth.js"></script>
   <script src="../assets/js/modules/project-flow.js"></script>
-<script src="../assets/js/modules/contact.js"></script>
+<script src="../assets/js/modules/brief-wizard.js"></script>
   </body>
 </html>
