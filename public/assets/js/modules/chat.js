@@ -87,7 +87,7 @@ async function load(){
    projectData=payload.new;setStatus(payload.new.status);updateChatLock(payload.new.status);
  }).subscribe(status=>{let d=document.querySelector(".dot");if(d)d.dataset.realtime=status==="SUBSCRIBED"?"online":"connecting"});
 }
-function setStatus(s){const x=document.querySelector("#projectStatus");if(x)x.textContent=s;const sel=document.querySelector("#projectStatusSelect");if(sel)sel.value=s}
+function setStatus(s){window.renderProjectTimeline?.(s);const x=document.querySelector("#projectStatus");if(x)x.textContent=s;const sel=document.querySelector("#projectStatusSelect");if(sel)sel.value=s}
 
 function bindMessageActions(){
  bindFileDownloads();renderProjectFiles();
@@ -227,6 +227,7 @@ document.querySelector("#chatForm").addEventListener("submit",async e=>{
    pendingFolders.clear();
    const files=[...pendingFiles];
    for(const item of files){
+     if(item.state==="done")continue;
      item.state="uploading";item.progress=35;renderQueue();
      const f=item.file,path=pathFor(f);
      const {error:upErr}=await renobva.sb.storage.from(bucket).upload(path,f,{contentType:f.type||"application/octet-stream"});

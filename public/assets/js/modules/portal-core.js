@@ -16,7 +16,7 @@ async function profileFor(id){const {data}=await sb.from("profiles").select("*")
 async function requireAuth(admin=false){
  if(!guardConfig())return null;
  const user=await currentUser();
- if(!user){location.href="../auth/login.html";return null}
+ if(!user){location.href="../auth/login.html?returnTo="+encodeURIComponent(location.pathname+location.search);return null}
  const profile=await profileFor(user.id);
  if(admin && profile?.role!=="admin"){location.href="../portal/dashboard.html";return null}
  document.querySelectorAll("[data-user-name]").forEach(x=>x.textContent=profile?.display_name||user.email.split("@")[0]);

@@ -1,12 +1,1 @@
-
-(async()=>{
- const ctx=await requireAuth();if(!ctx)return;
- const {data:projects}=await renobva.sb.from("projects").select("*").order("created_at",{ascending:false});
- const list=document.querySelector("#projectList"),empty=document.querySelector("#emptyProjects");
- if(!projects?.length){empty.hidden=false;return}
- empty.hidden=true;
- list.innerHTML=projects.map(p=>`<a class="project-row" href="project.html?id=${p.id}">
- <span class="project-icon">${p.category==="special"?"✦":"↗"}</span><span><b>${escapeHtml(p.title)}</b><small>${escapeHtml(p.service_type)} • ${new Date(p.created_at).toLocaleDateString()}</small></span>
- <span class="status ${p.status.replaceAll(" ","-")}">${p.status}</span><span>→</span></a>`).join("");
-})();
-function escapeHtml(s=""){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+(async()=>{const ctx=await requireAuth();if(!ctx)return;const w=RENOBVA_WORKFLOW,esc=w.escape,list=document.querySelector('#projectList'),empty=document.querySelector('#emptyProjects');let busy=false,last='';async function refresh(){if(busy||document.hidden)return;busy=true;try{const data=await w.load(renobva.sb);const projects=data.projects.filter(p=>p.user_id===ctx.user.id);const signature=JSON.stringify(data);if(signature===last)return;last=signature;empty.hidden=!!projects.length;list.innerHTML=projects.map(p=>{const next=w.next(p,data);return `<article class="client-action-card"><div><span class="eyebrow">${esc(p.service_type)}</span><span class="workflow-status">${esc(p.status)}</span></div><h2>${esc(p.title)}</h2><div class="next-action"><small>YOUR NEXT STEP</small><h3>${esc(next.label)}</h3><p>${esc(next.detail)}</p><a class="btn primary" href="project.html?id=${p.id}">${next.kind==='closed'?'View history':'Open project'} →</a></div>${p.deadline?`<small>Preferred deadline: ${esc(p.deadline)}</small>`:''}</article>`}).join('');document.querySelector('#clientProjectCount').textContent=projects.length;document.querySelector('#clientActionCount').textContent=projects.filter(p=>['quote','review','payment','questions'].includes(w.next(p,data).kind)).length}catch(e){toast('Could not load projects. Check your connection and retry.','error')}finally{busy=false}}await refresh();const timer=setInterval(refresh,5000);window.addEventListener('pagehide',()=>clearInterval(timer))})();

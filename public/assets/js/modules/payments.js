@@ -67,25 +67,49 @@
     return `<button type="button" class="btn primary compact" data-pay>Pay ${money(p.amount,p.currency)}</button>`;
   }
 
+  // Calculate in cents so the preview and saved payment always agree.
+  function discountedPrice(base,percent){
+    if(!Number.isFinite(base)||base<=0||!Number.isFinite(percent)||percent<0||percent>=100)return null;
+    const original=Math.round(base*100),total=Math.round(original*(1-percent/100));
+    if(total<1)return null;
+    return {original:original/100,total:total/100,saved:(original-total)/100,percent};
+  }
+
   function openAdminModal(){
     const presets=pricePresets(payProject),recommended=recommendedPresetIndex(payProject,presets);
     const service=payProject?.service_type||"Website development";
     const projectTitle=payProject?.title||service;
     const options=presets.map((x,i)=>`<option value="${i}" ${i===recommended?"selected":""}>${esc(x.label)}</option>`).join("")+`<option value="custom">Custom price…</option>`;
     const selected=presets[recommended];
-    const m=$("#paymentModal");m.hidden=false;m.innerHTML=`<div class="payment-modal-backdrop" data-close-pay></div><form class="payment-dialog" id="paymentRequestForm"><button class="payment-x" type="button" data-close-pay>×</button><small class="payment-kicker">RENOBVA · ADMIN</small><h2>Request payment</h2><p>This client requested <b>${esc(service)}</b>${payProject?.budget?` with a budget of <b>${esc(payProject.budget)}</b>`:""}. A matching price is selected automatically, but you can change it.</p><label>Price<select id="paymentPricePreset" class="payment-select">${options}</select></label><label id="customPaymentAmount" hidden>Custom amount<div class="money-input"><span>€</span><input name="custom_amount" type="number" min="0.01" step="0.01" placeholder="Enter your price"></div></label><input type="hidden" name="amount" value="${selected.amount}"><label>For<select id="paymentForPreset" class="payment-select"><option value="service" selected>${esc(service)}</option><option value="project">${esc(projectTitle)}</option><option value="custom">Custom…</option></select><input id="paymentCustomTitle" maxlength="120" placeholder="Enter custom payment title" hidden></label><input type="hidden" name="title" value="${esc(service)}"><label>Note<textarea name="note" maxlength="500" placeholder="e.g. 50% deposit for your project"></textarea></label><div class="payment-dialog-actions"><button type="button" class="btn" data-close-pay>Cancel</button><button class="btn primary" type="submit">Send request</button></div></form>`;
+    const m=$("#paymentModal");m.hidden=false;m.innerHTML=`<div class="payment-modal-backdrop" data-close-pay></div><form class="payment-dialog" id="paymentRequestForm"><button class="payment-x" type="button" data-close-pay>×</button><small class="payment-kicker">RENOBVA · ADMIN</small><h2>Request payment</h2><p>This client requested <b>${esc(service)}</b>${payProject?.budget?` with a budget of <b>${esc(payProject.budget)}</b>`:""}. A matching price is selected automatically, but you can change it.</p><label>Price<select id="paymentPricePreset" class="payment-select">${options}</select></label><label id="customPaymentAmount" hidden>Custom amount<div class="money-input"><span>€</span><input name="custom_amount" type="number" min="0.01" step="0.01" placeholder="Enter your price"></div></label><input type="hidden" name="amount" value="${selected.amount}"><label>Discount (%)<input name="discount_percent" type="number" min="0" max="99.99" step="0.01" value="0" placeholder="e.g. 10"><small>Optional. Applied to this payment request only.</small></label><div class="discount-summary" aria-live="polite" id="discountSummary"></div><label>For<select id="paymentForPreset" class="payment-select"><option value="service" selected>${esc(service)}</option><option value="project">${esc(projectTitle)}</option><option value="custom">Custom…</option></select><input id="paymentCustomTitle" maxlength="120" placeholder="Enter custom payment title" hidden></label><input type="hidden" name="title" value="${esc(service)}"><label>Note<textarea name="note" maxlength="500" placeholder="e.g. 50% deposit for your project"></textarea></label><div class="payment-dialog-actions"><button type="button" class="btn" data-close-pay>Cancel</button><button class="btn primary" type="submit">Send request</button></div></form>`;
     bindClose();
     const form=$("#paymentRequestForm"),priceSelect=$("#paymentPricePreset"),customWrap=$("#customPaymentAmount"),customAmount=form.elements.custom_amount,amount=form.elements.amount,forSelect=$("#paymentForPreset"),customTitle=$("#paymentCustomTitle"),title=form.elements.title;
-    priceSelect.onchange=()=>{const custom=priceSelect.value==="custom";customWrap.hidden=!custom;customAmount.required=custom;if(custom){amount.value="";customAmount.focus()}else{amount.value=presets[Number(priceSelect.value)].amount}};
-    customAmount.oninput=()=>{if(priceSelect.value==="custom")amount.value=customAmount.value};
+    const discount=form.elements.discount_percent;
+    function updatePrice(){
+      const base=priceSelect.value==='custom'?Number(customAmount.value):presets[Number(priceSelect.value)].amount;
+      const percent=discount.value.trim()===''?0:Number(discount.value);
+      const result=discountedPrice(base,percent);
+      discount.setCustomValidity(Number.isFinite(percent)&&percent>=0&&percent<100?'':'Enter a discount from 0 to 99.99%.');
+      amount.value=result?result.total.toFixed(2):'';
+      form.dataset.originalAmount=result?result.original:'';
+      form.dataset.discountPercent=result?result.percent:'';
+      $('#discountSummary').innerHTML=result?`<div><span>Original price</span><b>${money(result.original)}</b></div><div><span>Discount (${result.percent}%)</span><b>−${money(result.saved)}</b></div><div class="discount-total"><span>Client pays</span><strong>${money(result.total)}</strong></div>`:'Choose a valid price and discount.';
+    }
+    priceSelect.onchange=()=>{const custom=priceSelect.value==='custom';customWrap.hidden=!custom;customAmount.required=custom;if(custom)customAmount.focus();updatePrice()};
+    customAmount.oninput=updatePrice;discount.oninput=updatePrice;updatePrice();
     forSelect.onchange=()=>{const custom=forSelect.value==="custom";customTitle.hidden=!custom;customTitle.required=custom;if(custom){title.value="";customTitle.focus()}else title.value=forSelect.value==="project"?projectTitle:service};
     customTitle.oninput=()=>{if(forSelect.value==="custom")title.value=customTitle.value};
-    form.onsubmit=createRequest;
+    form.onsubmit=event=>{updatePrice();if(form.reportValidity())createRequest(event);else event.preventDefault()};
   }
   async function createRequest(e){
     e.preventDefault();const fd=new FormData(e.target),amount=Number(fd.get("amount"));if(!amount||amount<=0)return toast("Enter a valid amount.","warn");
+    const percent=Number(e.target.dataset.discountPercent||0),original=Number(e.target.dataset.originalAmount);
+    const calculated=discountedPrice(original,percent);
+    if(!calculated||Math.abs(calculated.total-amount)>0.00001)return toast('Please check the price and discount.','warn');
+    const discountNote=percent>0?`Discount: ${percent}% off ${money(calculated.original)} (saved ${money(calculated.saved)}).`:'';
+    const note=[String(fd.get('note')||'').trim(),discountNote].filter(Boolean).join('\n');
     const btn=e.submitter;btn.disabled=true;btn.textContent="Sending…";
-    const {data,error}=await renobva.sb.from("payment_requests").insert({project_id:payProject.id,client_id:payProject.user_id,created_by:payCtx.user.id,amount,currency:"EUR",title:fd.get("title").trim(),note:fd.get("note").trim()||null}).select("*").single();
+    const {data,error}=await renobva.sb.from("payment_requests").insert({project_id:payProject.id,client_id:payProject.user_id,created_by:payCtx.user.id,amount,currency:"EUR",title:fd.get("title").trim(),note:note||null}).select("*").single();
     btn.disabled=false;btn.textContent="Send request";if(error)return toast(error.message,"error");payRequests.push(data);closeModal();renderDock();toast("Payment request sent.");
   }
 
