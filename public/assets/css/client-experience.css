@@ -4,6 +4,8 @@
 .workspace-search input{box-sizing:border-box;flex:1 1 220px;width:100%;min-width:0;padding:16px 18px;border:1px solid #3b414e;border-radius:12px;background:#0e1118;color:#fff;font:inherit;color-scheme:dark}
 .workspace-search input::placeholder{color:#aab3c3}
 .workspace-search-form .btn{flex:0 0 auto}
+.workspace-settings :is(input:not([type=checkbox]):not([type=radio]),textarea,select){color:#f4f6fa;caret-color:#fff;background:#101721;color-scheme:dark}
+.workspace-settings :is(input,textarea)::placeholder{color:#aab3c3;opacity:1}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 [hidden]{display:none!important}
 :where(a,button,input,select,textarea,summary):focus-visible{outline:3px solid #ffae83;outline-offset:4px}
