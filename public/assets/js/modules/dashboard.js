@@ -24,8 +24,8 @@
       document.querySelector('#clientProjectCount').textContent=active.length;
       document.querySelector('#clientActionCount').textContent=active.filter(p=>['quote','review','payment','questions','delivery'].includes(w.next(p,data).kind)).length;
       window.dispatchEvent(new Event('renobva:cards-rendered'));
-    }catch{spotlight.innerHTML='<p role="alert">Could not load your workspace. Your projects are safe.</p><button class="btn" data-home-retry>Retry</button>';spotlight.querySelector('button').onclick=()=>{last='';refresh();};}
-    finally{busy=false;}
+    }catch{list.querySelector('[data-initial-loading]')?.remove();spotlight.innerHTML='<p role="alert">Could not load your workspace. Your projects are safe.</p><button class="btn" data-home-retry>Retry</button>';spotlight.querySelector('button').onclick=()=>{last='';refresh();};}
+    finally{busy=false;list.removeAttribute('aria-busy');}
   }
   window.addEventListener('renobva:retry',()=>{last='';refresh();});await refresh();const timer=setInterval(refresh,5000);window.addEventListener('pagehide',()=>clearInterval(timer));
 })();
