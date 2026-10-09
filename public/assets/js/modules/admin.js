@@ -18,7 +18,7 @@ const dateLabel=value=>value?new Date(value.slice(0,10)+'T12:00:00').toLocaleDat
 async function refreshAdmin(){
  const button=document.querySelector('#adminRefresh');button.disabled=true;button.textContent='Refreshing…';
  try{
- const [projects,profiles]=await Promise.all([renobva.sb.from('projects').select('*,profiles(display_name,email)').order('created_at',{ascending:false}),renobva.sb.from('profiles').select('*').order('created_at',{ascending:false})]);
+ const [projects,profiles]=await Promise.all([renobva.sb.from('projects').select('*,profiles!projects_user_id_fkey(display_name,email)').order('created_at',{ascending:false}),renobva.sb.from('profiles').select('*').order('created_at',{ascending:false})]);
  if(projects.error||profiles.error)throw projects.error||profiles.error;
  ADMIN_PROJECTS=projects.data||[];ADMIN_CLIENTS=(profiles.data||[]).filter(x=>x.role==='client');updateCounts();renderAdmin();renderClients();
  }catch(error){toast(error.message,'error');document.querySelector('#adminResultCount').textContent='Could not refresh. Please try again.'}

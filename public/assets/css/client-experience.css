@@ -1,5 +1,9 @@
 /* RENOBVA client experience: dark surfaces, warm accents, clear controls. */
 :root{--experience-surface:#13151b;--experience-muted:#b9bdc8;--experience-accent:#ff947a}
+.workspace-search-form .actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.workspace-search input{box-sizing:border-box;flex:1 1 220px;width:100%;min-width:0;padding:16px 18px;border:1px solid #3b414e;border-radius:12px;background:#0e1118;color:#fff;font:inherit;color-scheme:dark}
+.workspace-search input::placeholder{color:#aab3c3}
+.workspace-search-form .btn{flex:0 0 auto}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 [hidden]{display:none!important}
 :where(a,button,input,select,textarea,summary):focus-visible{outline:3px solid #ffae83;outline-offset:4px}
