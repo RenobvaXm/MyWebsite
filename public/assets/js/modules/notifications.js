@@ -1,7 +1,56 @@
-(async()=>{
-if(!renobva.sb)return;const sb=renobva.sb,{data:{user}}=await sb.auth.getUser();if(!user)return;const {data:profile}=await sb.from('profiles').select('role').eq('id',user.id).single();const admin=profile?.role==='admin',key='renobva.updates.'+user.id;let read={},items=[],busy=false;try{read=JSON.parse(localStorage.getItem(key)||'{}')}catch{}const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const host=document.createElement('details');host.className='notification-inbox';host.innerHTML='<summary>♧ Notifications <b id="notificationCount">0</b></summary><div class="notification-panel"><header><b>Your updates</b><button id="markUpdates">Mark all read</button></header><div id="updateItems">Loading…</div></div>';document.querySelector('.portal-top')?.appendChild(host);const save=()=>{try{localStorage.setItem(key,JSON.stringify(read))}catch{}};
-function draw(){host.querySelector('#notificationCount').textContent=items.filter(i=>!read[i.key]).length;host.querySelector('#updateItems').innerHTML=items.length?items.map(i=>`<a class="notification-item ${read[i.key]?'':'unread'}" data-update="${esc(i.key)}" href="/pages/${admin?'admin/admin-chat':'portal/project'}.html?id=${i.project}"><b>${esc(i.label)}</b><small>${esc(i.title)} · ${esc(new Date(i.time).toLocaleString())}</small></a>`).join(''):'<p>No updates yet.</p>';host.querySelectorAll('[data-update]').forEach(a=>a.onclick=()=>{read[a.dataset.update]=true;save()})}host.querySelector('#markUpdates').onclick=()=>{items.forEach(i=>read[i.key]=true);save();draw()};
-async function refresh(){if(busy||document.hidden)return;busy=true;try{const r=await Promise.all([sb.from('messages').select('id,project_id,created_at,projects(title)').neq('sender_id',user.id).is('deleted_at',null).order('created_at',{ascending:false}).limit(30),sb.from('payment_requests').select('id,project_id,title,status,updated_at,created_at').order('created_at',{ascending:false}).limit(30),sb.from('project_deliveries').select('id,project_id,title,created_at').order('created_at',{ascending:false}).limit(30),sb.from('project_quotes').select('id,project_id,title,status,created_at,decided_at').order('created_at',{ascending:false}).limit(30),sb.from('project_reviews').select('id,project_id,title,status,created_at,decided_at').order('created_at',{ascending:false}).limit(30)]);if(r.some(x=>x.error))return;items=[...(r[0].data||[]).map(m=>({key:'m'+m.id,project:m.project_id,label:'New message or file',title:m.projects?.title||'Conversation',time:m.created_at})),...(r[1].data||[]).filter(p=>p.status!=='cancelled').map(p=>({key:'p'+p.id+p.status,project:p.project_id,label:p.status==='paid'?'Payment received':p.status==='submitted'?'Payment awaiting confirmation':'Payment request',title:p.title,time:p.updated_at||p.created_at})),...(r[2].data||[]).map(d=>({key:'d'+d.id,project:d.project_id,label:'Delivery available',title:d.title,time:d.created_at})),...(r[3].data||[]).map(q=>({key:'q'+q.id+q.status,project:q.project_id,label:q.status==='pending'?'Quote awaiting your decision':'Quote '+q.status,title:q.title,time:q.decided_at||q.created_at})),...(r[4].data||[]).map(v=>({key:'r'+v.id+v.status,project:v.project_id,label:v.status==='pending'?'Design review requested':'Design '+v.status.replaceAll('_',' '),title:v.title,time:v.decided_at||v.created_at}))].sort((a,b)=>b.time.localeCompare(a.time)).slice(0,30);draw()}catch{}finally{busy=false}}
-await refresh();const timer=setInterval(refresh,5000);document.addEventListener('visibilitychange',refresh);window.addEventListener('pagehide',()=>clearInterval(timer));
-})();
+/* One signed-in notification bell across the public website and portal. */
+(async () => {
+  const client = window.renobva?.sb || window.renobvaSiteAuth;
+  if(!client)return;
+  const {data, error} = await client.auth.getUser();
+  if(error || !data.user)return;
+  const user=data.user;
+  const profile=await client.from('profiles').select('role').eq('id',user.id).maybeSingle();
+  const admin=profile.data?.role==='admin', e=RENOBVA_EXPERIENCE.escape;
+  const target=document.querySelector('.navin') || document.querySelector('.portal-top') || document.querySelector('.case-header');
+  if(!target)return;
+  const host=document.createElement('details');host.className='renobva-notification-bell';
+  host.innerHTML=`<summary aria-label="Notifications" aria-expanded="false"><svg viewBox="0 0 24 24" width="23" height="23" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="bell-count" hidden></span></summary><section class="bell-panel" aria-label="Recent notifications"><header><div><span class="eyebrow">YOUR WORKSPACE</span><h2>Notifications</h2></div><button type="button" class="mini-btn" data-read-all>Mark all read</button></header><div data-bell-status role="status">Loading updates…</div><div class="bell-items"></div><footer><a href="/pages/${admin?'admin':'portal'}/dashboard.html">Open dashboard →</a><a href="/pages/portal/settings.html">Preferences</a></footer></section>`;
+  const menu=target.querySelector('.menu');menu?menu.before(host):target.appendChild(host);
+  const summary=host.querySelector('summary'),count=host.querySelector('.bell-count'),status=host.querySelector('[data-bell-status]');
+  let busy=false,rows=[],kinds=['messages','payments','approvals','deliveries'],last='';
+  host.addEventListener('toggle',()=>summary.setAttribute('aria-expanded',String(host.open)));
+  document.addEventListener('pointerdown',ev=>{if(!host.contains(ev.target))host.open=false;});
+  host.addEventListener('keydown',ev=>{if(ev.key==='Escape'){host.open=false;summary.focus();}});
+  function draw(total){
+    count.hidden=total===0;count.textContent=total>99?'99+':String(total);summary.setAttribute('aria-label',`Notifications, ${total} unread`);
+    host.querySelector('[data-read-all]').disabled=total===0;
+    host.querySelector('.bell-items').innerHTML=rows.map(n=>`<a class="bell-item ${n.read_at?'':'is-unread'}" data-notification="${n.id}" href="${RENOBVA_EXPERIENCE.projectHref(n.project_id,!admin&&n.label==='Project status: completed'?'handover':n.tab,admin)}"><span class="bell-event-dot" aria-hidden="true"></span><span><strong>${e(!admin&&n.label==='Project status: completed'?'Your project is complete — share your experience':n.label)}</strong><small>${e(n.projects?.title || 'Project update')}</small><time datetime="${n.created_at}">${e(new Date(n.created_at).toLocaleString())}</time>${n.read_at?'':'<span class="sr-only">Unread</span>'}</span><span aria-hidden="true">↗</span></a>`).join('');
+    status.textContent=rows.length?'':'You’re all caught up. New updates will appear here.';
+    host.querySelectorAll('[data-notification]').forEach(a=>a.addEventListener('click',async ev=>{if(ev.ctrlKey||ev.metaKey||ev.shiftKey||ev.altKey)return;ev.preventDefault();try{await client.from('portal_notifications').update({read_at:new Date().toISOString()}).eq('id',a.dataset.notification).eq('recipient_id',user.id);}finally{location.href=a.href;}}));
+  }
+  async function refresh(){
+    if(busy || document.hidden)return;busy=true;
+    try{
+      const preference=await client.from('notification_preferences').select('messages,payments,approvals,deliveries').eq('user_id',user.id).maybeSingle();
+      if(preference.error)throw preference.error;
+      kinds=['messages','payments','approvals','deliveries'].filter(k=>preference.data?.[k]!==false);
+      if(!kinds.length){rows=[];draw(0);return;}
+      const results=await Promise.all([
+        client.from('portal_notifications').select('id,project_id,label,tab,created_at,read_at,projects(title)').eq('recipient_id',user.id).in('kind',kinds).order('created_at',{ascending:false}).limit(40),
+        client.from('portal_notifications').select('id',{count:'exact',head:true}).eq('recipient_id',user.id).in('kind',kinds).is('read_at',null)
+      ]);
+      if(results.some(r=>r.error))throw results.find(r=>r.error).error;
+      rows=results[0].data || [];const signature=JSON.stringify([rows,results[1].count]);
+      if(signature!==last){last=signature;draw(results[1].count || 0);}else{status.textContent=rows.length?'':'You’re all caught up. New updates will appear here.';}
+    }catch{status.innerHTML='Could not load notifications. <button class="mini-btn" data-bell-retry>Retry</button>';status.querySelector('button').onclick=refresh;}
+    finally{busy=false;}
+  }
+  host.querySelector('[data-read-all]').onclick=async ev=>{
+    const b=ev.currentTarget;b.disabled=true;
+    const r=await client.from('portal_notifications').update({read_at:new Date().toISOString()}).eq('recipient_id',user.id).in('kind',kinds).is('read_at',null);
+    if(r.error){status.textContent='Could not mark notifications read. Please retry.';b.disabled=false;}else{last='';await refresh();}
+  };
+  await refresh();
+  const channel=client.channel('navigation-notifications-'+user.id).on('postgres_changes',{event:'*',schema:'public',table:'portal_notifications',filter:'recipient_id=eq.'+user.id},refresh).subscribe();
+  const timer=setInterval(refresh,10000);
+  window.addEventListener('renobva:retry',refresh);document.addEventListener('visibilitychange',refresh);
+  window.addEventListener('focus',refresh);
+  const {data:listener}=client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){host.remove();clearInterval(timer);client.removeChannel(channel);}});
+  window.addEventListener('pagehide',()=>{clearInterval(timer);client.removeChannel(channel);listener.subscription.unsubscribe();});
+})().catch(()=>{});

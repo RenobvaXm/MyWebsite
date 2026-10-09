@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width" />
     <title>Dashboard | RENOBVA Admin</title>
     <link rel="stylesheet" href="../../assets/css/style.css" />
-  <link rel="stylesheet" href="../../assets/css/brief.css"><link rel="stylesheet" href="../../assets/css/admin.css"><link rel="stylesheet" href="../../assets/css/files.css"><link rel="stylesheet" href="../../assets/css/project-experience.css"><link rel="stylesheet" href="../../assets/css/professional.css"></head>
+  <link rel="stylesheet" href="../../assets/css/brief.css"><link rel="stylesheet" href="../../assets/css/admin.css"><link rel="stylesheet" href="../../assets/css/files.css"><link rel="stylesheet" href="../../assets/css/project-experience.css"><link rel="stylesheet" href="../../assets/css/professional.css"><link rel="stylesheet" href="../../assets/css/workspace.css"><link rel="stylesheet" href="../../assets/css/project-usability.css"><link rel="stylesheet" href="../../assets/css/client-experience.css"></head>
   <body class="portal-body admin-workspace">
     <div class="portal-shell">
       <aside class="portal-side">
@@ -53,7 +53,7 @@
         <div class="admin-view-tabs" role="group" aria-label="Workspace view"><button class="selected" data-view="projects">Project inbox</button><button data-view="clients">Clients</button></div>
         <section id="projectInbox">
           <div class="admin-toolbar"><input id="adminSearch" aria-label="Search projects" placeholder="Search projects, clients or services…"><select id="adminFilter" aria-label="Filter status"><option value="all">All statuses</option><option>new</option><option>questions</option><option>in progress</option><option>review</option><option>completed</option><option>cancelled</option></select><select id="adminSort" aria-label="Sort projects"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="deadline">Deadline first</option><option value="name">Project name</option></select></div>
-          <div class="admin-queue-tabs" role="group" aria-label="Project queue"><button data-queue="all" class="selected">All projects</button><button data-queue="attention">Needs attention <span id="attentionCount">0</span></button><button data-queue="active">In progress</button><button data-queue="closed">Closed</button></div>
+          <div class="admin-queue-tabs" role="group" aria-label="Project queue"><button data-queue="all" class="selected">Current projects</button><button data-queue="attention">Needs attention <span id="attentionCount">0</span></button><button data-queue="active">In progress</button><button data-queue="closed">Closed</button><button data-queue="archived">Archived</button><button data-queue="trash">Trash</button></div>
           <div class="admin-result-line"><span id="adminResultCount" aria-live="polite">Loading your workspace…</span><span>Open a brief to review answers & files</span></div>
           <div id="adminProjects" class="admin-project-grid"></div><div class="admin-pagination"><button class="btn" id="adminPrev">← Previous</button><span id="adminPage"></span><button class="btn" id="adminNext">Next →</button></div>
         </section>
@@ -63,7 +63,7 @@
             <span class="eyebrow">WORKFLOW</span>
             <h2>Client communication</h2>
             <p>
-              Open Chat on any project to talk directly with that client.
+              Manage project on any project to talk directly with that client.
               Messages are tied to the project and protected by Supabase RLS.
             </p>
           </div>
@@ -74,8 +74,8 @@
       </main>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0"></script>
-    <script src="../../assets/js/supabase-config.js"></script>
-    <script src="../../assets/js/modules/portal-core.js"></script>
+    <script src="../../assets/js/supabase-config.js"></script><script src="../../assets/js/modules/client-experience-core.js"></script><script src="../../assets/js/modules/workspace-tools.js"></script>
+    <script src="../../assets/js/modules/connection-feedback.js"></script><script src="../../assets/js/modules/portal-core.js"></script><script src="../../assets/js/modules/project-usability-core.js"></script><script src="../../assets/js/modules/draft-recovery.js"></script>
     <script src="../../assets/js/modules/file-downloads.js"></script><script src="../../assets/js/modules/admin.js"></script>
-  <script src="../../assets/js/modules/notifications.js"></script><script src="../../assets/js/modules/workflow-core.js"></script><script src="../../assets/js/modules/admin-inbox.js"></script></body>
+  <script src="../../assets/js/modules/notifications.js"></script><script src="../../assets/js/modules/workflow-core.js"></script><script src="../../assets/js/modules/admin-inbox.js"></script><script src="../../assets/js/modules/workspace-search.js"></script><script src="../../assets/js/modules/workspace-admin.js"></script><script src="../../assets/js/modules/unread-messages.js"></script><script src="../../assets/js/modules/project-lifecycle.js"></script><script src="../../assets/js/modules/accessibility.js"></script><script src="../../assets/js/modules/admin-command-search.js"></script></body>
 </html>

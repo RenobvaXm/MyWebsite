@@ -1,0 +1,75 @@
+/* RENOBVA client experience: dark surfaces, warm accents, clear controls. */
+:root{--experience-surface:#13151b;--experience-muted:#b9bdc8;--experience-accent:#ff947a}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+[hidden]{display:none!important}
+:where(a,button,input,select,textarea,summary):focus-visible{outline:3px solid #ffae83;outline-offset:4px}
+button:disabled{opacity:.55;cursor:not-allowed}
+.skip-link{position:fixed;left:18px;top:-120px;z-index:10000;padding:14px 20px;border-radius:10px;background:#fff;color:#111;font-weight:700}
+.skip-link:focus{top:15px}
+.btn.primary{background:linear-gradient(120deg,#c42f24,#9e390b);color:#fff;border:1px solid #ff7955}
+.experience-panel{padding:25px;border:1px solid #32343e;background:linear-gradient(145deg,#17191f,#101217);border-radius:20px;margin:20px 0}
+.experience-panel h2{margin:6px 0 18px;font-size:clamp(23px,3vw,30px)}
+.experience-panel p,.revision-card p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.75;color:#d6d9e2}
+.experience-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.experience-heading h2{margin-bottom:10px}
+.experience-panel .muted,.client-card-facts,.experience-panel small{color:var(--experience-muted)}
+.experience-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-top:25px}
+.experience-metrics>div{border-top:1px solid #39303a;padding-top:16px;display:grid;gap:8px}
+.experience-metrics strong{font-size:clamp(18px,2vw,24px)}
+.revision-card{margin-top:18px;padding:21px;background:#0e1015;border:1px solid #30333e;border-radius:14px}
+.revision-card>div:first-child{display:flex;gap:15px;align-items:center;flex-wrap:wrap}
+.revision-card h3{margin:17px 0 8px}
+.revision-card button{margin:12px 0 0 12px}
+.revision-response{margin:18px 0;padding:15px 20px;border-left:3px solid #ff7955;border-radius:0 10px 10px 0;background:#211b20}
+.client-spotlight{display:grid;grid-template-columns:1.4fr 1fr;gap:30px;padding:32px;margin:25px 0;border:1px solid #6a372e;border-radius:24px;background:radial-gradient(ellipse at 0 0,#48241f,transparent 70%),#15151b}
+.client-spotlight h2{font-size:clamp(26px,4vw,39px);line-height:1.2;margin:15px 0}
+.client-spotlight p{color:#dadce3;line-height:1.7}
+.spotlight-copy>small{color:#e8b5a7;display:block;margin:20px 0}
+.spotlight-summary{display:grid;gap:20px;align-content:center}
+.spotlight-summary>div{display:grid;gap:8px;padding:20px;border:1px solid #44313a;border-radius:16px;background:#101217a6}
+.spotlight-summary span,.spotlight-summary small{color:#c0c3cd}
+.spotlight-summary strong{font-size:23px;overflow-wrap:anywhere}
+.spotlight-summary small{font-size:12px;line-height:1.6}
+.client-card-facts{display:grid;gap:10px;padding-top:18px;font-size:13px;line-height:1.6}
+.client-card-facts b{color:#f2f2f4}
+.client-action-card .next-action .btn{margin-top:8px;margin-right:8px}
+.renobva-notification-bell{position:relative;flex-shrink:0;margin-left:auto;z-index:110}
+.renobva-notification-bell summary{list-style:none;display:flex;position:relative;align-items:center;justify-content:center;width:46px;height:46px;border:1px solid #42434c;border-radius:14px;color:#f8f8fb;background:#171920;cursor:pointer}
+.renobva-notification-bell summary::-webkit-details-marker,.site-account summary::-webkit-details-marker{display:none}
+.renobva-notification-bell[open] summary{border-color:#ff7955;background:#35201e}
+.bell-count{position:absolute;top:-5px;right:-7px;min-width:21px;min-height:21px;padding:2px 5px;border-radius:20px;background:#c52d25;color:#fff;font-size:11px;font-weight:800;line-height:17px;border:2px solid #111319;text-align:center}
+.bell-panel{position:absolute;right:0;top:58px;width:min(410px,calc(100vw - 32px));padding:0;border:1px solid #46404a;border-radius:20px;background:#111319;box-shadow:0 24px 65px #0009;overflow:hidden;text-align:left}
+.bell-panel header{padding:22px 20px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #30323c}
+.bell-panel h2{font-size:21px;margin:5px 0 0;color:#fff}
+.bell-panel .eyebrow{font-size:9px;color:#ffa18a}
+.bell-panel button{min-height:44px;color:#ffb198;background:transparent;border:0;cursor:pointer}
+.bell-panel [data-bell-status]{padding:0 20px;color:#c5cad5;font-size:13px;line-height:1.7}
+.bell-panel [data-bell-status]:not(:empty){padding:20px}
+.bell-items{max-height:min(480px,65vh);overflow:auto}
+.bell-item{display:grid!important;grid-template-columns:8px 1fr 16px;gap:12px;padding:17px 20px!important;border-bottom:1px solid #282b34;color:#eef0f5!important;line-height:1.5;text-decoration:none}
+.bell-item strong{display:block;font-size:13px}.bell-item small,.bell-item time{display:block;color:#bec2ce;font-size:11px;margin-top:4px}
+.bell-item.is-unread{background:#33201d7a}.bell-item:hover{background:#252832}
+.bell-event-dot{width:7px;height:7px;border-radius:50%;background:#727680;margin-top:7px}.is-unread .bell-event-dot{background:#ff9271;box-shadow:0 0 10px #ff6b554d}
+.bell-panel footer{display:flex;justify-content:space-between;gap:10px;padding:16px 20px;color:#ffb198;font-size:12px;background:#171920}
+.navin{gap:18px}.navin .renobva-notification-bell{margin-left:0}.portal-top{gap:15px;flex-wrap:wrap}.portal-top .user-chip{margin-left:auto}.portal-top .renobva-notification-bell{margin-left:0}
+.site-account{position:relative;color:#fff}.site-account summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;min-height:46px;font-size:13px;max-width:210px}
+.site-avatar{width:31px;height:31px;border-radius:50%;background:#4c2420;display:grid;place-items:center;overflow:hidden;border:1px solid #9a5141;flex-shrink:0}.site-avatar img{width:100%;height:100%;object-fit:cover}.site-account-name{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.site-account-menu{position:absolute;right:0;top:100%;min-width:225px;padding:10px;border:1px solid #40343b;border-radius:13px;background:#111319;box-shadow:0 20px 50px #0009;z-index:120}
+.site-account-menu a,.site-account-menu button{display:block;width:100%;text-align:left;padding:12px!important;color:#f0f0f5!important;border:0;border-radius:7px;background:transparent;font:inherit;font-size:13px;cursor:pointer}
+.site-account-menu a:hover,.site-account-menu button:hover{background:#33231f}
+.command-search-trigger{display:flex;gap:20px;align-items:center;padding:11px 14px;border:1px solid #42404b;border-radius:12px;background:#1b1d25;color:#d5d8e2;font:inherit;font-size:12px;cursor:pointer}
+kbd{padding:3px 6px;border:1px solid #51414c;border-radius:5px;color:#e8c7bc;font-size:10px}
+.command-search-dialog,.portal-guide-dialog{color:#f2f3f6;background:#14161e;border:1px solid #52404a;border-radius:24px;width:min(680px,calc(100vw - 30px));max-height:85vh;padding:30px;box-sizing:border-box;box-shadow:0 25px 80px #000b}
+dialog::backdrop{background:#05070bd6;backdrop-filter:blur(7px)}
+.command-search-dialog h2{font-size:30px;margin:0 0 13px}.command-search-dialog label{display:block;color:#c1c5cf;font-size:13px;margin-bottom:12px}
+.command-search-dialog input{width:100%;box-sizing:border-box;padding:17px;background:#0a0c12;border:1px solid #6c423b;border-radius:12px;color:#fff;font:inherit;font-size:16px}
+.command-search-dialog [role=status]{color:#c1c5cf;font-size:13px;margin:17px 0}.command-results{overflow:auto;max-height:50vh}
+.command-result{display:grid;grid-template-columns:80px 1fr 15px;gap:15px;padding:16px 8px;border-top:1px solid #30323e;color:#fff;text-decoration:none;align-items:center}.command-result strong{font-size:13px;display:block;overflow-wrap:anywhere}.command-result small{font-size:11px;color:#bfc4d0;display:block;margin-top:6px}.command-result:hover{background:#24212a}
+.command-close,.guide-close{position:absolute;top:16px;right:20px;background:transparent;border:0;color:#d6d8e2;font-size:25px;min-height:44px;min-width:44px;cursor:pointer}
+.portal-guide-dialog{max-width:570px;padding:42px}.portal-guide-dialog h2{font-size:32px;line-height:1.2;margin:18px 0}.portal-guide-dialog p{color:#cdd0da;line-height:1.9;min-height:100px}.portal-guide-dialog .guide-error{color:#ffb0a2;min-height:0}.portal-guide-dialog>small{color:#d8a599}.guide-link{color:#ffa18a;font-size:13px}.guide-progress{display:flex;gap:8px;margin:30px 0 20px}.guide-progress span{height:4px;flex:1;border-radius:5px;background:#343641}.guide-progress .active{background:#ff7955}.guide-button{margin-top:15px}
+.testimonial-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.testimonial-card{margin:0;padding:28px;border:1px solid #423039;background:linear-gradient(145deg,#1d1820,#111319);border-radius:20px}.testimonial-stars{color:#ffab77;letter-spacing:3px}.testimonial-card p{color:#e4e5eb;font-size:15px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere}.testimonial-card footer{color:#ffba9d;font-weight:700}
+@media(max-width:1050px){.navin{gap:12px}.site-account-name{max-width:90px}.client-spotlight{grid-template-columns:1fr}.spotlight-summary{grid-template-columns:1fr 1fr}.testimonial-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.navin .renobva-notification-bell{margin-left:auto}.bell-panel{position:fixed;top:78px;right:15px}.site-account-menu{left:0;right:auto}.client-spotlight{padding:23px}.spotlight-summary,.experience-metrics,.testimonial-grid{grid-template-columns:1fr}.experience-panel{padding:20px}.command-search-trigger{width:100%;justify-content:space-between}.command-search-dialog,.portal-guide-dialog{padding:30px 22px}.portal-guide-dialog h2{font-size:26px}.command-result{grid-template-columns:70px 1fr 12px;gap:10px}.experience-panel .actions{display:grid;grid-template-columns:1fr}.experience-panel button,.bell-panel button,.project-tabs button,.mini-btn{min-height:44px}.revision-card button{margin-left:0}.site-account summary{max-width:none}.site-account-name{max-width:160px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.showcase-orbit{animation:none!important}}
+
+@media(max-width:1050px){.navbar .navlinks{display:none;position:absolute;top:78px;left:0;right:0;background:#0b0d10;padding:25px;flex-direction:column;align-items:flex-start;border-bottom:1px solid #353039}.navbar .navlinks.open{display:flex}.navbar .menu{display:block}.navbar .renobva-notification-bell{margin-left:auto}.navbar .site-account-menu{left:0;right:auto}}

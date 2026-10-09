@@ -42,16 +42,16 @@ async function bubble(m){
    <div class="message-person">${avatar(p)}<div class="message-stack">
     <div class="message-meta"><b>${mine?"You":esc(name)}</b>${adminBadge(p)}<span>${new Date(m.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}${m.edited_at?" · edited":""}</span></div>
     ${reply}<div class="bubble ${m.body?"":"attachment-only"}">${m.body?esc(m.body):""}${await attachmentHtml(m)}</div>
-    <div class="message-actions"><button type="button" data-reply="${m.id}">↩ Reply</button>${mine&&m.body?`<button type="button" data-edit="${m.id}">✎ Edit</button>`:""}${mine?`<button type="button" data-delete-message="${m.id}">Delete</button>`:""}</div>
+    <div class="message-actions">${mine?`<small class="message-read-state" data-message-read="${m.id}">✓ Sent</small>`:''}<button type="button" data-reply="${m.id}">↩ Reply</button>${mine&&m.body?`<button type="button" data-edit="${m.id}">✎ Edit</button>`:""}${mine?`<button type="button" data-delete-message="${m.id}">Delete</button>`:""}</div>
    </div></div></div>`;
 }
 function isClosedStatus(status){return ["completed","cancelled"].includes((status||"").toLowerCase())}
 function updateChatLock(status){
- const locked=isClosedStatus(status),form=document.querySelector("#chatForm");
+ const locked=isClosedStatus(status)||!!projectData?.archived_at||!!projectData?.deleted_at,form=document.querySelector("#chatForm");
  if(!form)return;
  form.classList.toggle("chat-locked",locked);
  const input=form.querySelector('[name="message"]'),send=form.querySelector('button[type="submit"]'),attach=document.querySelector("#attachMenuButton");
- if(input){input.disabled=locked;input.placeholder=locked?(status==="completed"?"This project is finished. The conversation is read-only.":"This ticket is closed. The conversation is read-only."):"Write a message..."}
+ if(input){input.disabled=locked;input.placeholder=locked?(status==="completed"?"This project is finished. The conversation is read-only.":"This project is closed or archived. The conversation is read-only."):"Write a message..."}
  if(send){send.disabled=locked;send.textContent=locked?"Closed":"Send"}
  if(attach)attach.disabled=locked;
  if(locked){
@@ -66,14 +66,14 @@ function updateChatLock(status){
 async function load(){
  ctx=await requireAuth(location.pathname.includes("/admin/"));if(!ctx||!projectId)return;
  const {data:p,error}=await renobva.sb.from("projects").select("*").eq("id",projectId).single();
- if(error||!p){toast("Project not found.","error");return} projectData=p;
+ if(error||!p){toast("Project not found.","error");return} projectData=p;window.RENOBVA_PROJECT_STATE=p;window.dispatchEvent(new Event('renobva:project-state'));
  renderProjectDetails(p);
  document.querySelector("#projectTitle").textContent=p.title;document.querySelector("#projectService").textContent=p.service_type;setStatus(p.status);updateChatLock(p.status);
  const isAdmin=ctx.profile?.role==="admin";
  const adminControls=document.querySelector("#adminProjectControls");
  if(adminControls){adminControls.hidden=!isAdmin;if(isAdmin)adminControls.querySelector("#projectStatusSelect").value=p.status}
  const clientControls=document.querySelector("#clientTicketControls");
- if(clientControls)clientControls.hidden=isAdmin||["cancelled","completed"].includes(p.status);
+ if(clientControls)clientControls.hidden=isAdmin||!!p.archived_at||!!p.deleted_at||["cancelled","completed"].includes(p.status);
  const {data:msgs}=await renobva.sb.from("messages").select("*").eq("project_id",projectId).order("created_at");
  await Promise.all((msgs||[]).map(hydrateMessage));await render(msgs||[]);
  refreshTimer=setInterval(refreshConversation,5000);
@@ -84,7 +84,7 @@ async function load(){
  }).on("postgres_changes",{event:"UPDATE",schema:"public",table:"messages",filter:`project_id=eq.${projectId}`},async payload=>{
    const i=allMessages.findIndex(x=>x.id===payload.new.id);if(i>=0){payload.new.profiles=allMessages[i].profiles;allMessages[i]=payload.new;await render(allMessages)}
  }).on("postgres_changes",{event:"UPDATE",schema:"public",table:"projects",filter:`id=eq.${projectId}`},payload=>{
-   projectData=payload.new;setStatus(payload.new.status);updateChatLock(payload.new.status);
+   projectData=payload.new;window.RENOBVA_PROJECT_STATE=projectData;window.dispatchEvent(new Event('renobva:project-state'));setStatus(payload.new.status);updateChatLock(payload.new.status);
  }).subscribe(status=>{let d=document.querySelector(".dot");if(d)d.dataset.realtime=status==="SUBSCRIBED"?"online":"connecting"});
 }
 function setStatus(s){window.renderProjectTimeline?.(s);const x=document.querySelector("#projectStatus");if(x)x.textContent=s;const sel=document.querySelector("#projectStatusSelect");if(sel)sel.value=s}
@@ -108,13 +108,13 @@ searchInput?.addEventListener("input",e=>filterMessages(e.target.value));
 function filterMessages(q){q=q.toLowerCase().trim();document.querySelectorAll("#messages .message").forEach(el=>{const m=allMessages.find(x=>x.id===el.dataset.messageId);el.hidden=!!q&&!`${m?.body||""} ${m?.attachment_name||""}`.toLowerCase().includes(q)})}
 document.querySelector("#chatInfoToggle")?.addEventListener("click",()=>toast(`Project: ${projectData?.title||""} • Status: ${projectData?.status||""}`));
 
-async function render(ms){seen.clear();allMessages=ms;let html=[],lastDay="";for(const m of ms){seen.add(m.id);if(m.body==="Project brief attachment"&&m.attachment_path&&!m.deleted_at)continue;const day=fmtDay(m.created_at);if(day!==lastDay){html.push(`<div class="day-divider"><span>${day}</span></div>`);lastDay=day}html.push(await bubble(m))}document.querySelector("#messages").innerHTML=html.join("")||`<div class="chat-empty"><span>✦</span><h3>Your conversation starts here.</h3><p>Share a question, an idea, or feedback.<br>Your project files are available above.</p></div>`;bindMessageActions();renderProjectFiles();bindFileDownloads();scrollChat()}
-async function append(m){if(!m||seen.has(m.id))return;seen.add(m.id);allMessages.push(m);document.querySelector(".chat-empty")?.remove();document.querySelector("#messages").insertAdjacentHTML("beforeend",await bubble(m));bindMessageActions();renderProjectFiles();bindFileDownloads();scrollChat()}
+async function render(ms){seen.clear();allMessages=ms;let html=[],lastDay="";for(const m of ms){seen.add(m.id);if(m.body==="Project brief attachment"&&m.attachment_path&&!m.deleted_at)continue;const day=fmtDay(m.created_at);if(day!==lastDay){html.push(`<div class="day-divider"><span>${day}</span></div>`);lastDay=day}html.push(await bubble(m))}document.querySelector("#messages").innerHTML=html.join("")||`<div class="chat-empty"><span>✦</span><h3>Your conversation starts here.</h3><p>Share a question, an idea, or feedback.<br>Your project files are available above.</p></div>`;bindMessageActions();renderProjectFiles();bindFileDownloads();scrollChat();window.dispatchEvent(new Event('renobva:messages-rendered'))}
+async function append(m){if(!m||seen.has(m.id))return;seen.add(m.id);allMessages.push(m);document.querySelector(".chat-empty")?.remove();document.querySelector("#messages").insertAdjacentHTML("beforeend",await bubble(m));bindMessageActions();renderProjectFiles();bindFileDownloads();scrollChat();window.dispatchEvent(new Event('renobva:messages-rendered'))}
 let followLatest=true;
 const messageArea=document.querySelector('#messages');
 messageArea.addEventListener('scroll',()=>{followLatest=messageArea.scrollHeight-messageArea.scrollTop-messageArea.clientHeight<100});
 function scrollChat(){if(followLatest){messageArea.scrollTop=messageArea.scrollHeight}else{let button=document.querySelector('#chatLatest');if(!button){button=document.createElement('button');button.id='chatLatest';button.type='button';button.className='chat-latest';button.textContent='↓ Latest messages';messageArea.parentNode.insertBefore(button,messageArea.nextSibling);button.onclick=()=>{followLatest=true;messageArea.scrollTop=messageArea.scrollHeight;button.remove()}}}}
-const composer=document.querySelector('#chatForm [name="message"]');
+window.RENOBVA_CHAT_SCROLL=scrollChat;const composer=document.querySelector('#chatForm [name="message"]');
 composer.addEventListener('input',()=>{composer.style.height='auto';composer.style.height=Math.min(composer.scrollHeight,150)+'px'});
 composer.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&matchMedia('(pointer:fine)').matches){event.preventDefault();if(!document.querySelector('#chatForm button[type=submit]').disabled)document.querySelector('#chatForm').requestSubmit()}});
 
@@ -215,13 +215,13 @@ async function uploadFolderBundle(folderName,items){
 }
 
 document.querySelector("#chatForm").addEventListener("submit",async e=>{
- e.preventDefault();if(isClosedStatus(projectData?.status))return toast("This conversation is read-only because the ticket is closed.","warn");const input=e.target.message,body=input.value.trim();
+ e.preventDefault();if(isClosedStatus(projectData?.status)||projectData?.archived_at||projectData?.deleted_at)return toast("This conversation is read-only because the ticket is closed.","warn");const input=e.target.message,body=input.value.trim();
  if(!body&&!pendingFiles.length&&!pendingFolders.size)return;
  const btn=e.target.querySelector("button[type=submit]");btn.disabled=true;btn.textContent=(pendingFiles.length||pendingFolders.size)?"Uploading…":"Sending…";
  try{
    if(body){
      const {data:m,error}=await renobva.sb.from("messages").insert({project_id:projectId,sender_id:ctx.user.id,body,reply_to:replyTarget?.id||null,client_nonce:crypto.randomUUID()}).select("*").single();
-     if(error)throw error;await hydrateMessage(m);await append(m);input.value="";input.style.height="auto";
+     if(error)throw error;await hydrateMessage(m);await append(m);input.value="";window.RENOBVA_DRAFTS?.clear(e.target);input.style.height="auto";
    }
    for(const [folderName,items] of [...pendingFolders.entries()])await uploadFolderBundle(folderName,items);
    pendingFolders.clear();
@@ -237,7 +237,7 @@ document.querySelector("#chatForm").addEventListener("submit",async e=>{
    }
    pendingFiles=[];pendingFolders.clear();renderQueue();clearReply();input.focus();
  }catch(err){toast(err.message||"Upload failed.","error")}
- finally{updateChatLock(projectData?.status);if(!isClosedStatus(projectData?.status)){btn.disabled=false;btn.textContent="Send"}}
+ finally{updateChatLock(projectData?.status);if(!isClosedStatus(projectData?.status)&&!projectData?.archived_at&&!projectData?.deleted_at){btn.disabled=false;btn.textContent="Send"}}
 });
 
 document.querySelector("#projectStatusSelect")?.addEventListener("change",async e=>{
@@ -266,17 +266,18 @@ async function refreshConversation(){
  if(!ctx || refreshBusy || document.hidden)return;refreshBusy=true;
  try{
   const [{data:messages,error},{data:p}]=await Promise.all([renobva.sb.from('messages').select('*').eq('project_id',projectId).order('created_at'),renobva.sb.from('projects').select('*').eq('id',projectId).single()]);
-  if(error)return;
+  if(error){window.RENOBVA_CONNECTION?.error();return;}
+  window.RENOBVA_CONNECTION?.ok();
   const changed=messages.length!==allMessages.length || messages.some((m,i)=>JSON.stringify([m.id,m.body,m.edited_at,m.deleted_at,m.attachment_path])!==JSON.stringify([allMessages[i]?.id,allMessages[i]?.body,allMessages[i]?.edited_at,allMessages[i]?.deleted_at,allMessages[i]?.attachment_path]));
   if(changed){profileCache.clear();await Promise.all(messages.map(hydrateMessage));await render(messages)}
-  if(p){projectData=p;setStatus(p.status);updateChatLock(p.status)}
- }finally{refreshBusy=false}
+  if(p){projectData=p;window.RENOBVA_PROJECT_STATE=p;window.dispatchEvent(new Event('renobva:project-state'));setStatus(p.status);updateChatLock(p.status)}else{projectData={...projectData,deleted_at:new Date().toISOString()};window.RENOBVA_PROJECT_STATE=projectData;window.dispatchEvent(new Event('renobva:project-state'));updateChatLock(projectData.status);document.querySelector('#projectTitle').textContent='Project unavailable';}
+ }catch(error){window.RENOBVA_CONNECTION?.error();}finally{refreshBusy=false}
 }
 (async()=>{
  const saved=sessionStorage.getItem('renobva.project-notice');if(!saved)return;
  try{const result=JSON.parse(saved);if(result.id===projectId){toast(result.email_status==='sent'?'Project created. Confirmation emails sent.':'Project created. Chat is ready; email notifications are not activated yet.',result.email_status==='sent'?'ok':'warn');sessionStorage.removeItem('renobva.project-notice')}}catch{}
 })();
-load();
+load();window.addEventListener('renobva:retry',refreshConversation);
 
 function bindFileDownloads(){
  document.querySelectorAll('[data-download-file]').forEach(button=>button.onclick=async()=>{

@@ -14,6 +14,8 @@ Deno.serve(async req=>{
   const {data:p,error}=await db.from('payment_requests').select('*').eq('id',payment_id).single();
   if(error||!p||p.client_id!==user.id)return reply({error:'Payment request not found.'},404);
   if(p.status!=='pending')return reply({error:'This request is no longer payable.'},409);
+  const {data:project,error:projectError}=await db.from('projects').select('archived_at,deleted_at').eq('id',p.project_id).single();
+  if(projectError||!project||project.archived_at||project.deleted_at)return reply({error:'This project is archived or in Trash. Ask RENOBVA to restore it before paying.'},409);
   const key=Deno.env.get('STRIPE_SECRET_KEY'),origin=Deno.env.get('SITE_URL');
   if(!key||!origin)return reply({error:'Online checkout is not configured yet. Please contact RENOBVA.'},503);
   const base=new URL(origin);if(base.protocol!=='https:'&&base.hostname!=='localhost')throw Error('Invalid SITE_URL');

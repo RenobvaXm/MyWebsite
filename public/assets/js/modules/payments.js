@@ -81,7 +81,7 @@
     const projectTitle=payProject?.title||service;
     const options=presets.map((x,i)=>`<option value="${i}" ${i===recommended?"selected":""}>${esc(x.label)}</option>`).join("")+`<option value="custom">Custom price…</option>`;
     const selected=presets[recommended];
-    const m=$("#paymentModal");m.hidden=false;m.innerHTML=`<div class="payment-modal-backdrop" data-close-pay></div><form class="payment-dialog" id="paymentRequestForm"><button class="payment-x" type="button" data-close-pay>×</button><small class="payment-kicker">RENOBVA · ADMIN</small><h2>Request payment</h2><p>This client requested <b>${esc(service)}</b>${payProject?.budget?` with a budget of <b>${esc(payProject.budget)}</b>`:""}. A matching price is selected automatically, but you can change it.</p><label>Price<select id="paymentPricePreset" class="payment-select">${options}</select></label><label id="customPaymentAmount" hidden>Custom amount<div class="money-input"><span>€</span><input name="custom_amount" type="number" min="0.01" step="0.01" placeholder="Enter your price"></div></label><input type="hidden" name="amount" value="${selected.amount}"><label>Discount (%)<input name="discount_percent" type="number" min="0" max="99.99" step="0.01" value="0" placeholder="e.g. 10"><small>Optional. Applied to this payment request only.</small></label><div class="discount-summary" aria-live="polite" id="discountSummary"></div><label>For<select id="paymentForPreset" class="payment-select"><option value="service" selected>${esc(service)}</option><option value="project">${esc(projectTitle)}</option><option value="custom">Custom…</option></select><input id="paymentCustomTitle" maxlength="120" placeholder="Enter custom payment title" hidden></label><input type="hidden" name="title" value="${esc(service)}"><label>Note<textarea name="note" maxlength="500" placeholder="e.g. 50% deposit for your project"></textarea></label><div class="payment-dialog-actions"><button type="button" class="btn" data-close-pay>Cancel</button><button class="btn primary" type="submit">Send request</button></div></form>`;
+    const m=$("#paymentModal");m.hidden=false;m.innerHTML=`<div class="payment-modal-backdrop" data-close-pay></div><form class="payment-dialog" id="paymentRequestForm"><button class="payment-x" type="button" data-close-pay>×</button><small class="payment-kicker">RENOBVA · ADMIN</small><h2>Request payment</h2><p>This client requested <b>${esc(service)}</b>${payProject?.budget?` with a budget of <b>${esc(payProject.budget)}</b>`:""}. A matching price is selected automatically, but you can change it.</p><label>Price<select id="paymentPricePreset" name="price_preset" class="payment-select">${options}</select></label><label id="customPaymentAmount" hidden>Custom amount<div class="money-input"><span>€</span><input name="custom_amount" type="number" min="0.01" step="0.01" placeholder="Enter your price"></div></label><input type="hidden" name="amount" value="${selected.amount}"><label>Discount (%)<input name="discount_percent" type="number" min="0" max="99.99" step="0.01" value="0" placeholder="e.g. 10"><small>Optional. Applied to this payment request only.</small></label><div class="discount-summary" aria-live="polite" id="discountSummary"></div><label>For<select id="paymentForPreset" name="for_preset" class="payment-select"><option value="service" selected>${esc(service)}</option><option value="project">${esc(projectTitle)}</option><option value="custom">Custom…</option></select><input id="paymentCustomTitle" name="custom_title" maxlength="120" placeholder="Enter custom payment title" hidden></label><input type="hidden" name="title" value="${esc(service)}"><label>Note<textarea name="note" maxlength="500" placeholder="e.g. 50% deposit for your project"></textarea></label><div class="payment-dialog-actions"><button type="button" class="btn" data-close-pay>Cancel</button><button class="btn primary" type="submit">Send request</button></div></form>`;
     bindClose();
     const form=$("#paymentRequestForm"),priceSelect=$("#paymentPricePreset"),customWrap=$("#customPaymentAmount"),customAmount=form.elements.custom_amount,amount=form.elements.amount,forSelect=$("#paymentForPreset"),customTitle=$("#paymentCustomTitle"),title=form.elements.title;
     const discount=form.elements.discount_percent;
@@ -99,7 +99,7 @@
     customAmount.oninput=updatePrice;discount.oninput=updatePrice;updatePrice();
     forSelect.onchange=()=>{const custom=forSelect.value==="custom";customTitle.hidden=!custom;customTitle.required=custom;if(custom){title.value="";customTitle.focus()}else title.value=forSelect.value==="project"?projectTitle:service};
     customTitle.oninput=()=>{if(forSelect.value==="custom")title.value=customTitle.value};
-    form.onsubmit=event=>{updatePrice();if(form.reportValidity())createRequest(event);else event.preventDefault()};
+    window.RENOBVA_DRAFTS?.attach(form,'Payment request');form.onsubmit=event=>{updatePrice();if(form.reportValidity())createRequest(event);else event.preventDefault()};
   }
   async function createRequest(e){
     e.preventDefault();const fd=new FormData(e.target),amount=Number(fd.get("amount"));if(!amount||amount<=0)return toast("Enter a valid amount.","warn");
@@ -110,7 +110,7 @@
     const note=[String(fd.get('note')||'').trim(),discountNote].filter(Boolean).join('\n');
     const btn=e.submitter;btn.disabled=true;btn.textContent="Sending…";
     const {data,error}=await renobva.sb.from("payment_requests").insert({project_id:payProject.id,client_id:payProject.user_id,created_by:payCtx.user.id,amount,currency:"EUR",title:fd.get("title").trim(),note:note||null}).select("*").single();
-    btn.disabled=false;btn.textContent="Send request";if(error)return toast(error.message,"error");payRequests.push(data);closeModal();renderDock();toast("Payment request sent.");
+    btn.disabled=false;btn.textContent="Send request";if(error)return toast(error.message,"error");window.RENOBVA_DRAFTS?.clear(e.target);payRequests.push(data);closeModal();renderDock();toast("Payment request sent.");
   }
 
   function openClientModal(p){
@@ -170,7 +170,7 @@
       if(syncAgain&&!stopped){syncAgain=false;syncPayments()}
     }
   }
-  async function init(){
+  window.addEventListener('renobva:retry',syncPayments);async function init(){
     const id=new URLSearchParams(location.search).get("id");if(!id)return;
     for(let i=0;i<40&&!window.renobva;i++)await new Promise(r=>setTimeout(r,100));if(!window.renobva)return;
     payCtx=await requireAuth(location.pathname.includes("/admin/"));if(!payCtx)return;
